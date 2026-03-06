@@ -15,3 +15,4 @@ techDebateRouter.route('/delete-clubs').delete(TechDebateController.deleteAllClu
 techDebateRouter.route('/get-history').get(TechDebateController.history)
 techDebateRouter.route('/pause').post(TechDebateController.pauseDebate)
 techDebateRouter.route('/resume').post(TechDebateController.resumeDebate)
+techDebateRouter.route('/vote-r').post(TechDebateController.voteRightForLiveMatch)
