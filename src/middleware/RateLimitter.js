@@ -1,23 +1,53 @@
-// import { rateLimit } from 'express-rate-limit'
+import rateLimit from 'express-rate-limit';
 
-// const limiter = rateLimit({
-// 	windowMs: 15 * 60 * 1000, // 15 minutes
-// 	limit: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes).
-// 	standardHeaders: 'draft-8', // draft-6: `RateLimit-*` headers; draft-7 & draft-8: combined `RateLimit` header
-// 	legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
-// 	ipv6Subnet: 56, // Set to 60 or 64 to be less aggressive, or 52 or 48 to be more aggressive
-// 	// store: ... , // Redis, Memcached, etc. See below.
-// })
-// const rateLimiter = (limit)=>{
-//     const limiter = rateLimit({
-// 	windowMs: 1 * 60 * 1000, // 15 minutes
-// 	limit: limit, // Limit each IP to 100 requests per `window` (here, per 15 minutes).
-// 	standardHeaders: 'draft-8', // draft-6: `RateLimit-*` headers; draft-7 & draft-8: combined `RateLimit` header
-// 	legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
-// 	ipv6Subnet: 56, // Set to 60 or 64 to be less aggressive, or 52 or 48 to be more aggressive
-// 	// store: ... , // Redis, Memcached, etc. See below.
-// })
-//     return limiter  
-// }
+// Default rate limiter - 100 requests per 15 minutes
+export const defaultLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 100,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message: 'Too many requests, please try again later.'
+    }
+});
 
-// // Apply the rate limiting
+
+
+// Strict rate limiter for sensitive operations like voting - 10 requests per minute
+export const strictLimiter = rateLimit({    
+    windowMs: 1 * 60 * 1000, // 1 minute
+    limit: 5,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message: 'Too many requests, please try again later.'
+    }
+});
+
+// Form submission limiter - 5 requests per minute
+export const formLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute
+    limit: 5,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message: 'Too many form submissions, please try again later.'
+    }
+});
+
+// Custom rate limiter factory
+export const rateLimiter = (limit, windowMinutes = 1) => {
+    return rateLimit({
+        windowMs: windowMinutes * 60 * 1000,
+        limit: limit,
+        standardHeaders: 'draft-8',
+        legacyHeaders: false,
+        message: {
+            success: false,
+            message: 'Too many requests, please try again later.'
+        }
+    });
+};

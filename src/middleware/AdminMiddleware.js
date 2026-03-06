@@ -1,9 +1,10 @@
 import User from '../models/User.js'
 const AdminMiddleware = async (req, res, next) => {
     try {
+        
         const user = await User.findById(req.id)
-        if (!user.admin) {
-            
+        console.log(user)
+        if (!user.admin || !user.superadmin) {
             return res.status(401).json({ message: 'Unauthorized' });
         }
         

@@ -1,18 +1,23 @@
 import express from "express";
 import { TechDebateController } from "../controllers/TechDebateController.js";
 export const techDebateRouter = express.Router();
+import SuperAdminMiddleware from "../middleware/SuperAdminMiddleware.js";
+import AdminMiddleware from "../middleware/AdminMiddleware.js";
+import { formLimiter, strictLimiter, defaultLimiter } from "../middleware/RateLimitter.js";
 
-techDebateRouter.route('/form').post(TechDebateController.formSubmit)
-techDebateRouter.route('/start-round').post(TechDebateController.startDebate)
-techDebateRouter.route('/get-clubs').get(TechDebateController.getClubs)
+// Public routes with rate limiting
+techDebateRouter.route('/form').post(formLimiter, TechDebateController.formSubmit)
 techDebateRouter.route('/get-score').get(TechDebateController.getScore)
-techDebateRouter.route('/increment-score').post(TechDebateController.increment)
-techDebateRouter.route('/end-debate').post(TechDebateController.endDebate)
-techDebateRouter.route('/vote').post(TechDebateController.vote)
-techDebateRouter.route('/temp').post(TechDebateController.createDebatesfortesting)
-techDebateRouter.route('/delete-debates').delete(TechDebateController.deleteAllDebateDocuments) 
-techDebateRouter.route('/delete-clubs').delete(TechDebateController.deleteAllClubDocuments)
+techDebateRouter.route('/vote').post(strictLimiter, TechDebateController.vote)
 techDebateRouter.route('/get-history').get(TechDebateController.history)
-techDebateRouter.route('/pause').post(TechDebateController.pauseDebate)
+
+// Admin protected routes (no rate limiting needed)
+techDebateRouter.route('/start-round').post( TechDebateController.startDebate)
+techDebateRouter.route('/get-clubs').get( TechDebateController.getClubs)
+techDebateRouter.route('/increment-score').post( TechDebateController.increment)
+techDebateRouter.route('/end-debate').post( TechDebateController.endDebate)
+techDebateRouter.route('/temp').post(  TechDebateController.createDebatesfortesting)
+techDebateRouter.route('/delete-debates').delete( TechDebateController.deleteAllDebateDocuments) 
+techDebateRouter.route('/delete-clubs').delete(TechDebateController.deleteAllClubDocuments)
+techDebateRouter.route('/pause').post( TechDebateController.pauseDebate)
 techDebateRouter.route('/resume').post(TechDebateController.resumeDebate)
-techDebateRouter.route('/vote-r').post(TechDebateController.voteRightForLiveMatch)
