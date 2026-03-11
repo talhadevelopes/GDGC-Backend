@@ -5,7 +5,6 @@ export const VerifyToken = async (req, res, next) => {
             let token;
 
             token = req.headers.authorization.split(" ")[1];
-            
             if (!token) {
                 return res.status(401).json({
                     success: false,
@@ -32,7 +31,7 @@ export const VerifyToken = async (req, res, next) => {
             res.status(500).json({
                 
                 success: false,
-                error: error.message
+                error: error.message + "Please check through token "
             });
         }
     }
