@@ -5,9 +5,22 @@ import User from "../models/User.js";
 export const BlogController = {
     getBlog:async(req,res)=>{
         const {_id} = req.body;
-        const foundBlog = await Blog.findOne({_id})
+        const foundBlog = await Blog.findOne({_id}).sort({ "activity.total_upvotes": -1 }).populate({
+    path: 'activity.total_comments',
+    populate: { path: 'commentedBy', select: 'name' }
+  }).lean()
+  const toFrontEnd = {
+    ...foundBlog,author: await User.findById(foundBlog.author).select("name"),
+    comments: foundBlog.activity.total_comments,   // rename to 'comments'
+  activity: {
+    ...foundBlog.activity,
+    total_comments: foundBlog.activity.total_comments?.length || 0 
+  }
+  ,isLiked: foundBlog.activity.liked_by.some(userId => userId.toString() == req.id)
+  }
+
         if (foundBlog) {
-            return res.json(foundBlog)
+            return res.json(toFrontEnd)
         }
         return res.json({success:false})
     },
@@ -30,7 +43,6 @@ export const BlogController = {
     populate: { path: 'commentedBy', select: 'name' }
   })
   .lean();
-  console.log("blogs fetched from db", blogs)
   blogsForFrontend = blogs.map(blog => ({
   ...blog,
   comments: blog.activity.total_comments,   // rename to 'comments'
