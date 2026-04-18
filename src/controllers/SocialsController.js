@@ -1,4 +1,4 @@
-import Socials from "../models/Socials";
+import Socials from "../models/Socials.js";
 
 export const updateSocials = async(req,res)=> {
     try{
@@ -50,13 +50,6 @@ export const updateSocials = async(req,res)=> {
 export const getMySocials = async(req,res)=>{
     try{
         const socials=await Socials.findOne({user:req.id})
-        if(!socials){
-            return res.status(404).json({
-                success: false,
-                message:"no socials found.."
-            });
-
-        }
         res.json({
             success:true,
             data:socials
@@ -77,8 +70,7 @@ export const getMySocials = async(req,res)=>{
 // FOR PUBLIC SIGHT:-
 export const getAllSocials = async (req, res) => {
     try {
-        const socials = await Socials.find()
-            .populate("user", "name email"); // takes only name and email from user modell
+        const socials = await Socials.find().populate("user", "name"); // takes only name and email from user modell
 
         res.json({
             success: true,
