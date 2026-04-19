@@ -12,6 +12,32 @@ import cors from "cors"
 import connectDB from "./mongodb/index.js";
 const app = express();
 
+// Creating raw http server
+import http from 'http'
+const httpServer = http.createServer(app);
+
+// Creating a socket server
+import { Server } from 'socket.io';
+import SocketAuthMiddleware from './middleware/SocketAuthMiddleware.js';
+const io = new Server(httpServer);
+
+export const userSocketMap = {}
+
+io.use(SocketAuthMiddleware)
+
+// Broadcasts all the online users on connection
+io.on('connect', (socket) => {
+    const userId = socket.data.userId;
+    userSocketMap[userId] = socket.id;
+
+    io.emit('GetUsers', Object.keys(userSocketMap));
+
+    socket.on('disconnect', () => {
+        delete userSocketMap[userId];
+        io.emit('GetUsers', Object.keys(userSocketMap));
+    })
+})
+
 // Enable JSON body parsing
 app.use(express.json());
 app.use(cors());
@@ -44,7 +70,7 @@ app.use("/",qrRouter)
 
 // Start server
 const PORT = process.env.PORT || 3009;
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
     console.log(`Server listening on port ${PORT}`);
 });
 
