@@ -2,7 +2,7 @@ import { Verify, verify } from "crypto";
 import Blog from "../models/Blog.js";
 import User from "../models/User.js";
 import { success } from "zod";
-
+import Contact from "../models/Contact.js";
 // an admin cannot create a new admin 
 
 const AdminController={
@@ -132,7 +132,15 @@ const AdminController={
         } catch (error) {
             return res.json({success:false,error:error.message,superAdmins:null})
         }
+    },
+    getContacts: async (req, res) => {
+    try {
+        const contacts = await Contact.find().sort({ createdAt: -1 });
+        return res.json({ success: true, contacts });
+    } catch (error) {
+        return res.json({ success: false, error: error.message, contacts: null });
     }
+}
 }
 
 export default AdminController;
