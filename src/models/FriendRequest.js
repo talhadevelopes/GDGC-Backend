@@ -6,14 +6,14 @@ const friendRequestSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  recipient: {
+  receiver: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
   status: {
     type: String,
-    enum: ['pending', 'accepted', 'rejected'],
+    enum: ['pending', 'accepted', 'rejected', 'blocked'],
     default: 'pending'
   }
 }, { timestamps: true });

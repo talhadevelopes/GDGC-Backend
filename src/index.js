@@ -19,7 +19,8 @@ const httpServer = http.createServer(app);
 // Creating a socket server
 import { Server } from 'socket.io';
 import SocketAuthMiddleware from './middleware/SocketAuthMiddleware.js';
-const io = new Server(httpServer);
+
+export const io = new Server(httpServer);
 
 export const userSocketMap = {}
 
