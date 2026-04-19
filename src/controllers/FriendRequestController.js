@@ -1,7 +1,7 @@
 import {z} from 'zod';
-import FriendRequest from '../models/FriendRequest';
+import FriendRequest from '../models/FriendRequest.js';
 import { io, userSocketMap } from '../index.js';
-import Conversation from '../models/Conversation';
+import Conversation from '../models/Conversation.js';
 
 export const FriendRequestController = {
 
@@ -13,11 +13,16 @@ export const FriendRequestController = {
                 message: 'Receiver id needed'
             })
         }
+        if(sender.toString() === receiver.toString()) {
+            return res.status(400).json({ message: 'Cannot request to be your own friend' })
+        }
         try {
             // Checking if the request already exists
             const existingRequest = await FriendRequest.findOne({
-                sender,
-                receiver
+                $or: [
+                    { sender, receiver},
+                    { sender: receiver, receiver: sender}
+                ]
             });
             if(existingRequest) {
                 return res.status(409).json({
@@ -55,6 +60,9 @@ export const FriendRequestController = {
             return res.status(400).json({
                 message: 'Senders Id is required'
             })
+        }
+        if(sender.toString() === receiver.toString()) {
+            return res.status(400).json({ message: 'Cannot accept to be your own friend' })
         }
 
         try {
@@ -108,6 +116,9 @@ export const FriendRequestController = {
             return res.status(400).json({
                 message: 'Senders Id is required'
             })
+        }
+        if(sender.toString() === receiver.toString()) {
+            return res.status(400).json({ message: 'Cannot deny request to be your own friend' })
         }
 
         try {
@@ -225,6 +236,9 @@ export const FriendRequestController = {
             return res.status(400).json({
                 message: 'unfriendId is required'
             });
+        }
+        if(userId.toString() === unfrinedId.toString()) {
+            return res.status(400).json({ message: 'Cannot block your own self' })
         }
 
         try {
