@@ -10,6 +10,7 @@ export const updateSocials = async(req,res)=> {
             if (req.body.github !== undefined) socials.github = req.body.github;
             if (req.body.instagram !== undefined) socials.instagram = req.body.instagram;
             if (req.body.twitter !== undefined) socials.twitter = req.body.twitter;
+            if (req.body.leetcode !== undefined) socials.leetcode = req.body.leetcode;
 
             await socials.save();
 
@@ -25,7 +26,8 @@ export const updateSocials = async(req,res)=> {
             linkedin: req.body.linkedin || "",
             github: req.body.github || "",
             instagram: req.body.instagram || "",
-            twitter: req.body.twitter || ""
+            twitter: req.body.twitter || "",
+            leetcode: req.body.leetcode || ""
         });
         await socials.save();
 

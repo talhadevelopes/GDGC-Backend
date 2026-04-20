@@ -23,6 +23,10 @@ const socialsSchema= new mongoose.Schema({
     twitter:{
         type: String,
         default:""
+    },
+    leetcode:{
+        type: String,
+        default:""
     }
 }, {timestamps: true}
 );
