@@ -1,9 +1,8 @@
-import {z} from 'zod';
 import FriendRequest from '../models/FriendRequest.js';
 import { io, userSocketMap } from '../index.js';
 import Conversation from '../models/Conversation.js';
 
- const COOL_DOWN_PERIOD = /*5 * 24 * 60 * */ 60 * 1000;
+ const COOL_DOWN_PERIOD = 5 * 24 * 60 *  60 * 1000;
 export const FriendRequestController = {
 
     SendFriendRequest: async (req, res) => { 
