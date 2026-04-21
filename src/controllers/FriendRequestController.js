@@ -3,10 +3,11 @@ import FriendRequest from '../models/FriendRequest.js';
 import { io, userSocketMap } from '../index.js';
 import Conversation from '../models/Conversation.js';
 
+ const COOL_DOWN_PERIOD = /*5 * 24 * 60 * */ 60 * 1000;
 export const FriendRequestController = {
 
     SendFriendRequest: async (req, res) => { 
-        const receiver = req.params.recieicer;
+        const receiver = req.params.receiver;
         const sender = req.id;
         if(!receiver) {
             return res.status(400).json({
@@ -24,26 +25,55 @@ export const FriendRequestController = {
                     { sender: receiver, receiver: sender}
                 ]
             });
-            if(existingRequest) {
+            if(!existingRequest) { // No request exists so, one is created
+                const newFriendRequest = await FriendRequest.create({
+                    sender,
+                    receiver
+                });
+ 
+                // receiver notified
+                const receiverSocketId = userSocketMap[receiver];
+                if(receiverSocketId) {
+                    io.to(receiverSocketId).emit('NewFriendRequest', newFriendRequest);
+                }
+
+                return res.status(201).json({
+                    message: 'new friend request created and sent to the reciever',
+                    newFriendRequest
+                })
+            }
+            if(existingRequest.status !== 'rejected') { // if accepted or pending pr blocked
                 return res.status(409).json({
                     message: `Friend request already exists and is ${existingRequest.status}`
                 })
             }
-
-            const newFriendRequest = await FriendRequest.create({
-                sender,
-                receiver
-            });
+            // computing time elapsed after being rejected
+            const timeAfterRejection = Date.now() - existingRequest.rejectedAt.getTime();
+            if(
+                timeAfterRejection < COOL_DOWN_PERIOD && // elapsed time should be more than cool down period or else try later
+                sender.toString() === existingRequest.sender.toString() // previous sender should be the current sender (resending the request after being rejected)
+            ) {
+                return res.status(409).json({
+                    message: 'Try again later'
+                })
+            } 
+            
+            existingRequest.status = 'pending'; 
+            if(sender.toString() === existingRequest.receiver.toString()) { // current user(sender) should have received a request from the current receiver meaning the current user must be same as the previous receiver
+                existingRequest.receiver = receiver; // changing the previous request's receiver(current user/sender) to the current receiver  
+                existingRequest.sender = sender; // changing the previous sender(current receiver) to the current sender who is the current user
+            }
+            existingRequest.rejectedAt = null;
+            await existingRequest.save();
 
             const receiverSocketId = userSocketMap[receiver];
             if(receiverSocketId) {
-                io.to(receiverSocketId).emit('NewFriendRequest', newFriendRequest);
+                io.to(receiverSocketId).emit('NewFriendRequest', existingRequest);
             }
 
-            return res.status(201).json({
-                message: 'new friend request created and sent to the reciever',
-                newFriendRequest
-            })
+            return res.status(200).json({
+                message: 'Rejected request refreshed'
+            });
 
         } catch (error) {
             return res.status(500).json({
@@ -139,6 +169,7 @@ export const FriendRequestController = {
             }
 
             existingRequest.status = 'rejected';
+            existingRequest.rejectedAt = new Date()
             await existingRequest.save()
     
     
@@ -231,13 +262,13 @@ export const FriendRequestController = {
 
     BlockFriend: async (req, res) => {
         const userId = req.id;
-        const unfrinedId = req.params.unfrinedId;
-        if(!unfrinedId) {
+        const blockFrinedId = req.params.unfrinedId;
+        if(!blockFrinedId) {
             return res.status(400).json({
                 message: 'unfriendId is required'
             });
         }
-        if(userId.toString() === unfrinedId.toString()) {
+        if(userId.toString() === blockFrinedId.toString()) {
             return res.status(400).json({ message: 'Cannot block your own self' })
         }
 
@@ -245,8 +276,8 @@ export const FriendRequestController = {
             // Check for existing && accepted friend requests with user and unfriend, if none thorw error
             const existingRequest = await FriendRequest.findOne({
                 $or: [
-                    { receiver: userId, sender: unfrinedId },
-                    { receiver: unfrinedId, sender: userId },
+                    { receiver: userId, sender: blockFrinedId },
+                    { receiver: blockFrinedId, sender: userId },
                 ],
                 status: 'accepted'
             });
@@ -262,9 +293,9 @@ export const FriendRequestController = {
 
             // Send the other party a notification
             // Question to captain, should the user being blocked be notified about him being blocked by the current user?
-            const unfriendSocketId = userSocketMap[unfrinedId];
-            if(unfriendSocketId) {
-                io.to(unfriendSocketId).emit('Blocked', existingRequest)
+            const blockFriendSocketId = userSocketMap[blockFrinedId];
+            if(blockFriendSocketId) {
+                io.to(blockFriendSocketId).emit('Blocked', existingRequest)
             }
     
             // return result
@@ -277,7 +308,50 @@ export const FriendRequestController = {
                 message: error.message
             })
         }
+    },
 
+    UnblockFriend: async (req, res) => {
+        //get the userId and Id of the friend to be unblocked
+        const userId = req.id;
+        const unBlockFriendId = req.params.unBlockFriendId;
+
+       try {
+         // get the existing friend request and check if it is blocked
+         const existingRequest = await FriendRequest.findOne({
+             $or: [
+                 {sender: userId, receiver: unBlockFriendId},
+                 {receiver: userId, sender: unBlockFriendId}
+             ],
+             status: 'blocked'
+         });
+         if(!existingRequest) { // if not blocked throw
+             return res.status(404).json({
+                 message: 'No such request found'
+             })
+         }
+ 
+         // if blocked, turn to accepted
+         existingRequest.status = 'accepted';
+ 
+         // save the doc
+         await existingRequest.save();
+ 
+         // notify the other party
+         const unBlockFriendSocketId = userSocketMap[unBlockFriendId];
+         if(unBlockFriendSocketId) {
+             io.to(unBlockFriendSocketId).emit('Unblocked', existingRequest);
+         }
+ 
+         // return response
+         return res.status(200).json({
+             message: 'Unblocked successfully',
+             existingRequest
+         })
+       } catch (error) {
+            return res.status(500).json({
+                message: error.message
+            });
+       }
     },
  
 }

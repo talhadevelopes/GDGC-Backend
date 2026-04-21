@@ -5,20 +5,24 @@ import { VerifyToken } from '../middleware/AuthMiddleware.js';
 const friendRequestRouter = express.Router();
 
 friendRequestRouter
-.route('/request/:recieicer')
+.route('/request/:receiver')
 .post(VerifyToken, FriendRequestController.SendFriendRequest); 
 
 friendRequestRouter
 .route('/accept/:sender')
-.post(VerifyToken, FriendRequestController.AcceptFriendRequest); 
+.patch(VerifyToken, FriendRequestController.AcceptFriendRequest); 
 
 friendRequestRouter
 .route('/reject/:sender')
-.post(VerifyToken, FriendRequestController.RejectFriendRequest); 
+.patch(VerifyToken, FriendRequestController.RejectFriendRequest); 
 
 friendRequestRouter
 .route('/block/:unfrinedId')
-.post(VerifyToken, FriendRequestController.BlockFriend);
+.patch(VerifyToken, FriendRequestController.BlockFriend);
+
+friendRequestRouter
+.route('/unblock/:unBlockFriendId')
+.patch(VerifyToken, FriendRequestController.UnblockFriend)
 
 friendRequestRouter
 .route('/get-friends')
