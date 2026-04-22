@@ -8,7 +8,8 @@ export const BlogController = {
         const foundBlog = await Blog.findOne({_id}).sort({ "activity.total_upvotes": -1 }).populate({
     path: 'activity.total_comments',
     populate: { path: 'commentedBy', select: 'name' }
-  }).lean()
+  }).lean() 
+  console.log("Found blog is ",foundBlog,foundBlog.content[0].blocks)
   const toFrontEnd = {
     ...foundBlog,author: await User.findById(foundBlog.author).select("name"),
     comments: foundBlog.activity.total_comments,   // rename to 'comments'
@@ -43,6 +44,7 @@ export const BlogController = {
     populate: { path: 'commentedBy', select: 'name' }
   })
   .lean();
+
   blogsForFrontend = blogs.map(blog => ({
   ...blog,
   comments: blog.activity.total_comments,   // rename to 'comments'
@@ -79,19 +81,20 @@ export const BlogController = {
 ,
     publishBlog:async(req,res)=>{
         const {blog:{title,des,banner,content}} = req.body; //state from frontend
-        console.log("req came from frontend",title,des,banner,content)
         if (!title || !des || !banner || !content) {
             return res.json({"message":"Please provide all the details"}).status(500)
         }
         const toBePublished = new Blog({
             title,des,banner,author:req.id,content
         })
+        console.log("Blog to be published is ",toBePublished.title)
         try {
             await toBePublished.save()
         } catch (error) {
-            return res.json({"message":"Error in publishing blog "+error.message})
+            console.log("Error in publishing blog ",error.message)
+            return res.json({"error":"Error in publishing blog "+error.message})
         }
-        return res.json({"message":"Blog successfully uploaded",blog:toBePublished})
+        return res.json({"message":"Blog successfully uploaded",blog:toBePublished,success:true})
     },
     deleteBlog: async(req,res)=>{
         const {_id} = req.body;
@@ -149,5 +152,37 @@ export const BlogController = {
     const comments = await Comment.find({blogId:_id}).populate('commentedBy','name').sort({createdAt:-1})
     return res.json({comments})
    },
+   deleteAllBlogs: async(req,res)=>{
+    try {
+        await Blog.deleteMany({});
+        await Comment.deleteMany({});
+        return res.json({"message":"All blogs and comments deleted successfully"})
+    } catch (error) {
+        return res.json({"message":"Error in deleting all blogs "+error.message})
+    }   
+},
+    getAllBlogsOfAUser: async(req,res)=>{
+        const userId = req.id;
+        try {
+            const blogs = await Blog.find({author:userId}).sort({createdAt:-1}).populate({
+    path: 'activity.total_comments',
+    populate: { path: 'commentedBy', select: 'name' }
+  })
+  .lean();
+
+  const blogsForFrontend = blogs.map(blog => ({
+  ...blog,
+  comments: blog.activity.total_comments,   // rename to 'comments'
+  activity: {
+    ...blog.activity,
+    total_comments: blog.activity.total_comments?.length || 0 // set count to array length
+  }
+}));
+            const LikedArray = await Blog.find({ "activity.liked_by": req.id }).select("-author -activity.total_upvotes -activity.liked_by -__v -createdAt -updatedAt -title -des -banner -content")
+            return res.json({BlogArray:blogsForFrontend,LikedArray})
+        } catch (error) {
+            return res.json({"error":"Error in fetching blogs "+error.message})
+        }
+    }
    
 }
