@@ -30,8 +30,8 @@ jobs:
             docker pull $IMAGE
             
             echo "Stopping old container (ignore errors)..."
-            docker stop gdgc-backend 
-            docker rm gdgc-backend 
+            docker stop gdgc-backend || true
+            docker rm gdgc-backend || true 
 
             echo "Starting container..."
             docker run -d \

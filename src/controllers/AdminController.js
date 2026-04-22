@@ -132,7 +132,21 @@ const AdminController={
         } catch (error) {
             return res.json({success:false,error:error.message,superAdmins:null})
         }
-    }
+    },
+    getStats: async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    const totalAdmins = await User.countDocuments({ admin: true, superadmin: false });
+    const totalSuperAdmins = await User.countDocuments({ superadmin: true });
+
+    res.json({
+      success: true,
+      stats: { totalUsers, totalAdmins, totalSuperAdmins },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to fetch stats." });
+  }
+}
 }
 
 export default AdminController;

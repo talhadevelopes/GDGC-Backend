@@ -27,3 +27,7 @@ adminRouter.route('/remove-super-admin').post(VerifyToken,SuperAdminMiddleware,A
 adminRouter.route('/get-all-users').get(VerifyToken,AdminMiddleware,AdminController.getAllUsers)
 adminRouter.route('/get-all-admins').get(VerifyToken,SuperAdminMiddleware,AdminController.getAllAdmins)
 adminRouter.route('/get-all-super-admins').get(VerifyToken,SuperAdminMiddleware,AdminController.getAllSuperAdmins)
+
+// for the count of the users and admins and super admins
+
+adminRouter.route('/stats').get(VerifyToken, SuperAdminMiddleware, AdminController.getStats)
