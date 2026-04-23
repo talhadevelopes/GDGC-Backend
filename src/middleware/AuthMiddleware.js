@@ -3,7 +3,7 @@ import User from '../models/User.js'
 export const VerifyToken = async (req, res, next) => {
         try {
             let token;
-
+            console.log("Authorization header is ",req.headers.authorization)
             token = req.headers.authorization.split(" ")[1];
             if (!token) {
                 return res.status(401).json({
@@ -27,7 +27,7 @@ export const VerifyToken = async (req, res, next) => {
             next();
 
         } catch (error) {
-            console.log(error.message)
+            console.log(error.message + " Error in auth middleware")
             res.status(500).json({
                 
                 success: false,
