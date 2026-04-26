@@ -4,7 +4,7 @@ import Conversation from '../models/Conversation.js';
 import User from '../models/User.js';
 import { messageRouter } from '../routes/message.js';
 
- const COOL_DOWN_PERIOD = 5 * 24 * 60 *  60 * 1000;
+ const COOL_DOWN_PERIOD = 2 * 24 * 60 *  60 * 1000;
 export const FriendRequestController = {
 
     SendFriendRequest: async (req, res) => { 
