@@ -33,6 +33,16 @@ io.on('connect', (socket) => {
 
     io.emit('GetUsers', Object.keys(userSocketMap));
 
+    socket.on('Typing', ({conversationId, receiverId}) => {
+        const receiverSocketId = userSocketMap[receiverId];
+        if(receiverSocketId) socket.to(receiverSocketId).emit('Typing', {conversationId, sender: userId});
+    });
+
+    socket.on('StopTyping', ({conversationId, receiverId}) => {
+        const receiverSocketId = userSocketMap[receiverId];
+        if(receiverSocketId) socket.to(receiverId).emit('StopTyping', {conversationId})
+    })
+
     socket.on('disconnect', () => {
         delete userSocketMap[userId];
         io.emit('GetUsers', Object.keys(userSocketMap));
@@ -51,7 +61,8 @@ import { userRouter } from "./routes/user.js";
 import { authRouter } from "./routes/auth.js";
 import { dashboardRouter } from './routes/dashboard.js';
 import { adminRouter } from "./routes/admin.js";
-import { friendRequestRouter } from './routes/friendRequest.js'
+import { friendRequestRouter } from './routes/friendRequest.js';
+import { messageRouter } from './routes/message.js'
 // app.get('/',(req , res)=>{
 //     res.json({
 //         message : "Hello world"
@@ -66,6 +77,7 @@ app.use("/api/v1/auth", authRouter)
 app.use("/api/v1/dashboard",dashboardRouter)
 app.use('/api/v1/techdebate',techDebateRouter)
 app.use('/api/v1/friend-request', friendRequestRouter)
+app.use('/api/v1/message', messageRouter)
 
 // QR router should be LAST since it catches all remaining routes
 app.use("/",qrRouter)

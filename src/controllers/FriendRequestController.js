@@ -1,6 +1,8 @@
 import FriendRequest from '../models/FriendRequest.js';
 import { io, userSocketMap } from '../index.js';
 import Conversation from '../models/Conversation.js';
+import User from '../models/User.js';
+import { messageRouter } from '../routes/message.js';
 
  const COOL_DOWN_PERIOD = 5 * 24 * 60 *  60 * 1000;
 export const FriendRequestController = {
@@ -41,7 +43,7 @@ export const FriendRequestController = {
                     newFriendRequest
                 })
             }
-            if(existingRequest.status !== 'rejected') { // if accepted or pending pr blocked
+            if(existingRequest.status !== 'rejected') { // if accepted or pending or blocked
                 return res.status(409).json({
                     message: `Friend request already exists and is ${existingRequest.status}`
                 })
@@ -96,38 +98,32 @@ export const FriendRequestController = {
 
         try {
             // check for existing request if rejected throw error else if already friend throw conflict error else if pending patch!
-            const existingRequest = await FriendRequest.findOne({
+            const existingRequest = await FriendRequest.findOneAndUpdate({
                 sender,
                 receiver
-            });
+            }, {status: 'accepted'});
             if(!existingRequest) {
                 return res.status(400).json({
-                    message: 'No friend request found'
+                    message: 'No such friend request found'
                 })
             }
-            if(existingRequest.status !== 'pending') {
-                return res.status(409).json({
-                    message: `Request has already been ${existingRequest.status}`
-                })
-            }
-    
-            existingRequest.status = 'accepted';
-            await existingRequest.save()
     
             // create a conversation between them
-            await Conversation.create({
+            const conversation = await Conversation.create({
                 participants: [sender, receiver],
             });
-    
+            await conversation.populate('participants', 'name admin superadmin');
+            
+
             // notify the sender of the status
             const senderSocketId = userSocketMap[sender];
             if(senderSocketId) {
-                io.to(senderSocketId).emit('FriendRequestAccepted', existingRequest)
+                io.to(senderSocketId).emit('FriendRequestAccepted', conversation)
             }
 
             return res.status(200).json({
                 message: 'Friend request accepted',
-                data: existingRequest
+                conversation
             });
 
         } catch (error) {
@@ -175,12 +171,11 @@ export const FriendRequestController = {
             // notify the sender of the status
             const senderSocketId = userSocketMap[sender];
             if(senderSocketId) {
-                io.to(senderSocketId).emit('FriendRequestRejected', existingRequest)
+                io.to(senderSocketId).emit('FriendRequestRejected')
             }
 
             return res.status(200).json({
-                message: 'Friend request rejected',
-                data: existingRequest
+                message: 'Friend request rejected'
             });
 
         } catch(error) {
@@ -239,7 +234,7 @@ export const FriendRequestController = {
             return res.status(500).json({ message: error.message })
         }
     },
-
+    // conflict with GetAllConversations
     GetAllFriends: async (req, res) => {
         const userId = req.id;
 
@@ -265,48 +260,80 @@ export const FriendRequestController = {
         }
     },
 
+    GetAllConversations: async (req, res) => {
+        // get user id
+        const userId = req.id;
+        // query all the conversations where user is a participant
+        try {
+            const conversations = await Conversation.find({
+                participants: userId 
+            }).populate('participants', 'name admin superadmin');
+            if(conversations.length === 0) {
+                return res.status(200).json({message: "You don't have any friends"})
+            }
+
+            return res.status(200).json({
+                message: 'conversation fetched successfully',
+                conversations
+            })
+        } catch (error) {
+            return res.status(500).json({
+                message: error.message
+            })
+        }
+    },
+
     BlockFriend: async (req, res) => {
         const userId = req.id;
-        const blockFrinedId = req.params.unfrinedId;
-        if(!blockFrinedId) {
+        const blockFriendId = req.params.unfrinedId;
+        if(!blockFriendId) {
             return res.status(400).json({
                 message: 'unfriendId is required'
             });
         }
-        if(userId.toString() === blockFrinedId.toString()) {
+        if(userId.toString() === blockFriendId.toString()) {
             return res.status(400).json({ message: 'Cannot block your own self' })
         }
 
         try {
             // Check for existing && accepted friend requests with user and unfriend, if none thorw error
-            const existingRequest = await FriendRequest.findOne({
+            const existingRequest = await FriendRequest.findOneAndUpdate({
                 $or: [
-                    { receiver: userId, sender: blockFrinedId },
-                    { receiver: blockFrinedId, sender: userId },
+                    { receiver: userId, sender: blockFriendId },
+                    { receiver: blockFriendId, sender: userId },
                 ],
                 status: 'accepted'
-            });
+            }, {status: 'blocked'});
             if(!existingRequest) {
                 return res.status(404).json({
                     message: 'No such friend to unfrined'
                 })
             }
-    
-            // patch status to block
-            existingRequest.status = 'blocked';
-            await existingRequest.save();
+
+            await Conversation.findOneAndUpdate(
+                {
+                    participants: {
+                        $all: [
+                            userId,
+                            blockFriendId
+                        ]
+                    }
+                },
+                {
+                    $set: { blocked: true }
+                }
+            );
 
             // Send the other party a notification
             // Question to captain, should the user being blocked be notified about him being blocked by the current user?
-            const blockFriendSocketId = userSocketMap[blockFrinedId];
+            const blockFriendSocketId = userSocketMap[blockFriendId];
             if(blockFriendSocketId) {
-                io.to(blockFriendSocketId).emit('Blocked', existingRequest)
+                io.to(blockFriendSocketId).emit('Blocked')
             }
     
             // return result
             return res.status(200).json({
                 message: 'user blocked successfully',
-                existingRequest
             })
         } catch (error) {
             return res.status(500).json({
@@ -321,14 +348,14 @@ export const FriendRequestController = {
         const unBlockFriendId = req.params.unBlockFriendId;
 
        try {
-         // get the existing friend request and check if it is blocked
-         const existingRequest = await FriendRequest.findOne({
+         // get the existing friend request and check if it is blocked, if it is update
+         const existingRequest = await FriendRequest.findOneAndUpdate({
              $or: [
                  {sender: userId, receiver: unBlockFriendId},
                  {receiver: userId, sender: unBlockFriendId}
              ],
              status: 'blocked'
-         });
+         }, { status: 'accepted' });
          if(!existingRequest) { // if not blocked throw
              return res.status(404).json({
                  message: 'No such request found'
@@ -336,27 +363,71 @@ export const FriendRequestController = {
          }
  
          // if blocked, turn to accepted
-         existingRequest.status = 'accepted';
- 
-         // save the doc
-         await existingRequest.save();
+         await Conversation.findOneAndUpdate(
+            {
+                participants: {
+                    $all: [userId, unBlockFriendId]
+                }
+            },
+            { $set: { blocked: false } }
+         );
  
          // notify the other party
          const unBlockFriendSocketId = userSocketMap[unBlockFriendId];
          if(unBlockFriendSocketId) {
-             io.to(unBlockFriendSocketId).emit('Unblocked', existingRequest);
+             io.to(unBlockFriendSocketId).emit('Unblocked');
          }
  
          // return response
          return res.status(200).json({
-             message: 'Unblocked successfully',
-             existingRequest
+             message: 'Unblocked successfully'
          })
        } catch (error) {
             return res.status(500).json({
                 message: error.message
             });
        }
+    },
+
+    GetAllUsers: async (req, res) => {
+        // get user id 
+        const userId = req.id;
+        // get search query name and pagination details page, limit, 
+        const { name, page=1, limit=10 } = req.query;
+        
+
+        // construct a query object
+        const dbQuery = { _id: {$ne:userId} }
+        if(name) dbQuery.name = {$regex: name, $options: 'i'};
+
+        try {
+            // get users where current user is not included with name and include only name admin superadmin
+
+            const [users, total] = await Promise.all([
+                User
+                .find(dbQuery)
+                .skip((Number(page)-1)*Number(limit))
+                .limit(Number(limit))
+                .select('name admin superadmin'),
+
+                User.countDocuments(dbQuery)
+            ]);
+            if(users.length === 0) return res.status(404).json({
+                message: 'Users not found'
+            })
+            // send response
+            
+            return res.status(200).json({
+               users,
+               metaData: {
+                page,
+                limit,
+                total
+               }
+            })
+        } catch (error) {
+            return res.status(500).json({message: error.message})
+        }
     },
  
 }

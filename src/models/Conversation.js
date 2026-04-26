@@ -8,6 +8,10 @@ const conversationSchema = new mongoose.Schema({
 	lastMessage: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: 'Message'
+	},
+	blocked: {
+		type: Boolean,
+		default: false
 	}
 }, { timestamps: true });
 export default mongoose.model('Conversation', conversationSchema)
