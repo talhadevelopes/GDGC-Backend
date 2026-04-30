@@ -5,6 +5,10 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 import dyeRoutes from "./routes/dyeRoutes.js";
 
+
+import "./cron/leetcodecron.js";
+
+
 // Load .env from root directory
 dotenv.config({ path: path.join(__dirname, '../.env') });
 import express from "express"
