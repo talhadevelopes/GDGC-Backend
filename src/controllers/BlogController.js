@@ -193,6 +193,21 @@ export const BlogController = {
         } catch (error) {
             return res.json({"error":"Error in fetching blogs "+error.message})
         }
+    },
+    //i wanna delete a particular comment where the content of comment is 'ali' and uploader is Ali Web
+    commentToDelete: async(req,res)=>{
+        const blogId='69e99d92cbfbfa323ddf53f4';
+          const  commentText='ali'
+        try {
+            const comment = await Comment.findOneAndDelete({blogId,text:commentText}).populate('commentedBy','name')
+            if (!comment) {
+                return res.json({"message":"Comment not found"})
+            }
+            return res.json({"message":"Comment deleted successfully",comment})
+        } catch (error) {
+            return res.json({"message":"Error in deleting comment "+error.message})
+        }
     }
+
    
 }
