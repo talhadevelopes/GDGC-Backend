@@ -152,6 +152,10 @@ export const BlogController = {
     removeComment: async(req,res)=>{
         const {_id} = req.body; //this is comment id
         const comment = await Comment.findByIdAndDelete(_id)
+        comment.commentedBy.toString() == req.id.toString() || comment.blogId.author.toString() == req.id.toString() ? await Comment.findByIdAndDelete(_id) :  res.json({"message":"Unauthorized request"})
+         await Blog.findByIdAndUpdate(comment.blogId, {
+                $pull: { 'activity.total_comments': comment._id }
+                });
         if (!comment) {
             return res.json({"message":"Comment not found"})
         }
@@ -194,20 +198,6 @@ export const BlogController = {
             return res.json({"error":"Error in fetching blogs "+error.message})
         }
     },
-    //i wanna delete a particular comment where the content of comment is 'ali' and uploader is Ali Web
-    commentToDelete: async(req,res)=>{
-        const blogId='69e99d92cbfbfa323ddf53f4';
-          const  commentText='ali'
-        try {
-            const comment = await Comment.findOneAndDelete({blogId,text:commentText}).populate('commentedBy','name')
-            if (!comment) {
-                return res.json({"message":"Comment not found"})
-            }
-            return res.json({"message":"Comment deleted successfully",comment})
-        } catch (error) {
-            return res.json({"message":"Error in deleting comment "+error.message})
-        }
-    }
-
+   
    
 }
