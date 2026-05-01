@@ -3,11 +3,7 @@ import Socials from '../models/Socials.js';
 import LeetCode from '../models/LeetCode.js';
 
 
-// import mongoose from "mongoose";
 
-// mongoose.connect("mongodb+srv://hsamiuddin405_db_user:wDHR1SEWUtsJexnr@cluster0.jo3gqsq.mongodb.net/")
-// .then(() => console.log("DB connected"))
-// .catch(err => console.log(err));
 
 
 const extractLeetcodeUser= (url)=>
