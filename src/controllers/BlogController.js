@@ -158,7 +158,7 @@ export const BlogController = {
 
   const isCommenter = comment.commentedBy.toString() === req.id.toString();
   const isBlogAuthor = comment.blogId.author.toString() === req.id.toString();
-  if (!isCommenter && !isBlogAuthor) {
+  if (!isCommenter || !isBlogAuthor) {
     return res.status(403).json({ message: "Unauthorized request" });
   }
   await Comment.findByIdAndDelete(_id);
