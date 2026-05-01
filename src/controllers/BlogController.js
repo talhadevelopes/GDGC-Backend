@@ -158,6 +158,9 @@ export const BlogController = {
 
   const isCommenter = comment.commentedBy.toString() === req.id.toString();
   const isBlogAuthor = comment.blogId.author.toString() === req.id.toString();
+  console.log("Commenter ID:", comment.commentedBy);
+  console.log("Blog Author ID:", comment.blogId.author);
+  console.log("Requesting User ID:", req.id);
   if (!isCommenter || !isBlogAuthor) {
     return res.status(403).json({ message: "Unauthorized request" });
   }
