@@ -166,15 +166,7 @@ export const BlogController = {
     const comments = await Comment.find({blogId:_id}).populate('commentedBy','name').sort({createdAt:-1})
     return res.json({comments})
    },
-   deleteAllBlogs: async(req,res)=>{
-    try {
-        await Blog.deleteMany({});
-        await Comment.deleteMany({});
-        return res.json({"message":"All blogs and comments deleted successfully"})
-    } catch (error) {
-        return res.json({"message":"Error in deleting all blogs "+error.message})
-    }   
-},
+
     getAllBlogsOfAUser: async(req,res)=>{
         const userId = req.id;
         try {
