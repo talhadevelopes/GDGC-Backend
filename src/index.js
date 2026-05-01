@@ -24,12 +24,15 @@ import { userRouter } from "./routes/user.js";
 import { authRouter } from "./routes/auth.js";
 import { dashboardRouter } from './routes/dashboard.js';
 import { adminRouter } from "./routes/admin.js";
+import  socialsRouter  from "./routes/socials.js";
+
 import { blogRouter } from "./routes/blog.js";
 // app.get('/',(req , res)=>{
 //     res.json({
 //         message : "Hello world"
 //     })
 // })
+
 
 
 app.use('/api/v1/dye-application', dyeRoutes)
@@ -39,6 +42,8 @@ app.use("/api/v1/auth", authRouter)
 app.use("/api/v1/dashboard",dashboardRouter)
 app.use('/api/v1/techdebate',techDebateRouter)
 app.use("/api/v1/blog", blogRouter)
+
+app.use("/api/v1/socials", socialsRouter);
 
 // QR router should be LAST since it catches all remaining routes
 app.use("/",qrRouter)
