@@ -77,6 +77,10 @@ export const BlogController = {
     },
     downVoteBlog: async(req,res)=>{
          const {_id} = req.body;
+         const DidntLike = await Blog.findOne({_id,"activity.liked_by":req.id})
+         if (!DidntLike) {
+            return res.json({"message":"You have not upvoted this blog"})
+        }
         await Blog.findByIdAndUpdate(_id,{ $inc: { 'activity.total_upvotes': -1 } , $pull: { 'activity.liked_by': req.id } }
 );
         return res.json({"message":"downVoted successfully"})
@@ -105,7 +109,13 @@ export const BlogController = {
         const {_id} = req.body;
        //("Blog id to be deleted is ",_id)
        try {
-         const blog = await Blog.findById(_id) 
+         const blog = await Blog.findById(_id)
+         const user = await User.findById(req.id)
+         if (user.superadmin) {
+            await Blog.findByIdAndDelete(_id)
+            
+             return res.json({"message":"Blog deleted by Super Admin successfully"})
+         }
          if (blog.author.toString() == req.id.toString()) {
              await Blog.findByIdAndDelete(_id)
              return res.json({"message":"Blog deleted successfully"})
@@ -149,18 +159,28 @@ export const BlogController = {
                 return res.json({"message":"Error in adding comment "+error.message})
             }
     },
-    removeComment: async(req,res)=>{
-        const {_id} = req.body; //this is comment id
-        const comment = await Comment.findByIdAndDelete(_id)
-        comment.commentedBy.toString() == req.id.toString() || comment.blogId.author.toString() == req.id.toString() ? await Comment.findByIdAndDelete(_id) :  res.json({"message":"Unauthorized request"})
-         await Blog.findByIdAndUpdate(comment.blogId, {
-                $pull: { 'activity.total_comments': comment._id }
-                });
-        if (!comment) {
-            return res.json({"message":"Comment not found"})
-        }
-        return res.json({"message":"Comment deleted successfully"})
-    },
+    removeComment: async (req, res) => {
+  const { _id } = req.body;
+  const comment = await Comment.findById(_id).populate('blogId');
+  if (!comment) {
+    return res.status(404).json({ message: "Comment not found" });
+  }
+
+  const isCommenter = comment.commentedBy.toString() === req.id.toString();
+  const isBlogAuthor = comment.blogId.author.toString() === req.id.toString();
+  console.log("Commenter ID:", comment.commentedBy);
+  console.log("Blog Author ID:", comment.blogId.author);
+  console.log("Requesting User ID:", req.id);
+  if (!isCommenter || !isBlogAuthor) {
+    return res.status(403).json({ message: "Unauthorized request" });
+  }
+  await Comment.findByIdAndDelete(_id);
+  await Blog.findByIdAndUpdate(comment.blogId, {
+    $pull: { 'activity.total_comments': comment._id }
+  });
+  
+  return res.json({ message: "Comment deleted successfully" });
+},
    getComments: async(req,res)=>{
     const {_id} = req.body; //_id is blog id
     const comments = await Comment.find({blogId:_id}).populate('commentedBy','name').sort({createdAt:-1})
