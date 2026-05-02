@@ -2,6 +2,7 @@ import express from "express"
 import { AuthController } from "../controllers/AuthController.js"
 import { VerifyToken } from "../middleware/AuthMiddleware.js"
 import { InitialSetupVerify } from "../middleware/InitialSetupMiddleware.js"
+import SuperAdminMiddleware from "../middleware/SuperAdminMiddleware.js"
 
 export const authRouter = express.Router()
 
@@ -14,4 +15,5 @@ authRouter.route('/signup-guest').post(AuthController.GuestLogin)
 // ^ this is redundant we are using get-dashboard to do the same 
 authRouter.route('/change-password').post(VerifyToken,AuthController.ChangePassword)
 authRouter.route('/simple-verify').get(VerifyToken,AuthController.SimpleVerify)
+authRouter.route('/delete-all-guest-users').get(VerifyToken,SuperAdminMiddleware,AuthController.deleteAllguestUsers)
 authRouter.route('/initial-setup-check').get(InitialSetupVerify,AuthController.SimpleVerify)
