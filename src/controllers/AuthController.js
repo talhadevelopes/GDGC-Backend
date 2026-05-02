@@ -256,7 +256,6 @@ export const AuthController = {
         })
             try {
                     const password = nanoid();
-                    console.log(password); // Generate a random password for guest users
                     const salt = await bcrypt.genSalt(10);
                     const hash = await bcrypt.hash(password, salt);
             const guestUser = new User({
