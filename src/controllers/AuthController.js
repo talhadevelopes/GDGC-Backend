@@ -255,14 +255,16 @@ export const AuthController = {
             }
         })
             try {
-                    const password = nanoid(); // Generate a random password for guest users
+                    const password = nanoid();
+                    console.log(password); // Generate a random password for guest users
                     const salt = await bcrypt.genSalt(10);
                     const hash = await bcrypt.hash(password, salt);
             const guestUser = new User({
                 name,
                 email,
                 password: hash, // Use the hashed password
-                guest: true
+                guest: true,
+                qr_id:'abcd'
             });
             await guestUser.save();
             const transporter = nodemailer.createTransport({
@@ -288,9 +290,10 @@ export const AuthController = {
            
 
         } catch (error) {
+            console.error('Error creating guest user:', error);
             return res.status(500).json({
                 success: false,
-                message: 'Error creating guest user' + error.message
+                message: 'Error creating guest user ' + error.message
             });
         }
     },
@@ -453,5 +456,18 @@ export const AuthController = {
         return res.json({
             success:true
         })
+    },
+    deleteAllguestUsers: async(req,res)=>{
+        try {
+                res.status(200).json({
+                    "message":" Testers Not Allowed Here, Get the Hell Out ",
+                    success:true
+                })
+        } catch (error) {
+            res.status(500).json({
+                success:false,
+                message:error.message
+            })
+        }
     }
 }

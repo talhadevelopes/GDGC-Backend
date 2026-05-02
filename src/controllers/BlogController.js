@@ -77,6 +77,10 @@ export const BlogController = {
     },
     downVoteBlog: async(req,res)=>{
          const {_id} = req.body;
+         const DidntLike = await Blog.findOne({_id,"activity.liked_by":req.id})
+         if (!DidntLike) {
+            return res.json({"message":"You have not upvoted this blog"})
+        }
         await Blog.findByIdAndUpdate(_id,{ $inc: { 'activity.total_upvotes': -1 } , $pull: { 'activity.liked_by': req.id } }
 );
         return res.json({"message":"downVoted successfully"})
@@ -105,7 +109,13 @@ export const BlogController = {
         const {_id} = req.body;
        //("Blog id to be deleted is ",_id)
        try {
-         const blog = await Blog.findById(_id) 
+         const blog = await Blog.findById(_id)
+         const user = await User.findById(req.id)
+         if (user.superadmin) {
+            await Blog.findByIdAndDelete(_id)
+            
+             return res.json({"message":"Blog deleted by Super Admin successfully"})
+         }
          if (blog.author.toString() == req.id.toString()) {
              await Blog.findByIdAndDelete(_id)
              return res.json({"message":"Blog deleted successfully"})
