@@ -14,3 +14,7 @@ authRouter.route('/forgot-password').post(AuthController.ForgotPassword)
 authRouter.route('/change-password').post(VerifyToken,AuthController.ChangePassword)
 authRouter.route('/simple-verify').get(VerifyToken,AuthController.SimpleVerify)
 authRouter.route('/initial-setup-check').get(InitialSetupVerify,AuthController.SimpleVerify)
+
+authRouter.route('/register').post(AuthController.Register)
+authRouter.route('/login').post(AuthController.LoginUser)
+authRouter.route('/me').get(VerifyToken, AuthController.Me)
