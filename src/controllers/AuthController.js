@@ -238,64 +238,69 @@ export const AuthController = {
             })
         }
     },
-    GuestLogin : async(req,res)=>{
-        const {name, email} = req.body;
-        if (!name || !email) {
+    GuestLogin: async (req, res) => {
+    const { name, email } = req.body;
+
+    if (!name || !email) {
+        return res.status(400).json({
+            success: false,
+            message: 'Please provide name and email for guest login'
+        });
+    }
+
+    try {
+        const existingUser = await User.findOne({ email }); // ← awaited
+        if (existingUser) {
             return res.status(400).json({
                 success: false,
-                message: 'Please provide name and email for guest login'
+                message: 'A user with this email already exists. Please log in instead.'
             });
         }
-        User.findOne({ email }).then(existingUser => {
-            if (existingUser) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'A user with this email already exists. Please log in instead.'
-                });
+
+        const password = nanoid();
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(password, salt);
+
+        const guestUser = new User({
+            name,
+            email,
+            password: hash,
+            guest: true,
+            qr_id: 'abcd'
+        });
+
+        await guestUser.save(); // ← also fix the [guestUser.save](http://...) hyperlink bug
+
+        const transporter = nodemailer.createTransport({
+            host: "smtp-relay.brevo.com",
+            port: 587,
+            secure: false,
+            auth: {
+                user: process.env.BREVO_USER,
+                pass: process.env.BREVO_PASS,
             }
-        })
-            try {
-                    const password = nanoid();
-                    const salt = await bcrypt.genSalt(10);
-                    const hash = await bcrypt.hash(password, salt);
-            const guestUser = new User({
-                name,
-                email,
-                password: hash, // Use the hashed password
-                guest: true,
-                qr_id:'abcd'
-            });
-            await guestUser.save();
-            const transporter = nodemailer.createTransport({
-                    host:"smtp-relay.brevo.com",
-                    port: 587,
-                    secure: false, // use false for STARTTLS; true for SSL on port 465
-                    auth: {
-                        user: process.env.BREVO_USER,
-                        pass: process.env.BREVO_PASS,
-                    }
-                    });
-                    await transporter.sendMail({
-                            from: "GDGC MJCET <gdgc.noreply@gmail.com>",
-                            to: email,
-                            subject: "Password for GDGC account",
-                            html: `<h1>Hello from the Web Dev Team</h1>Thank you for Signing up, Here is your password : <b>${password}</b> <br>To keep your account safe, we encourage you on not sharing your password with anyone.  <br><br>Best Wishes, <br>Web Dev Team, GDGC MJCET`
-                        });
+        });
 
-            return res.json({
-                success: true,
-                message: 'Guest user created successfully'
-            });
-           
+        await transporter.sendMail({
+            from: "GDGC MJCET <gdgc.noreply@gmail.com>",
+            to: email,
+            subject: "Password for GDGC account",
+            html: `<h1>Hello from the Web Dev Team</h1>Thank you for Signing up, Here is your password : <b>${password}</b>...`
+        });
 
-        } catch (error) {
-            console.error('Error creating guest user:', error);
-            return res.status(500).json({
-                success: false,
-                message: 'Error creating guest user ' + error.message
-            });
-        }
-    },
+        return res.json({
+            success: true,
+            message: 'Guest user created successfully'
+        });
+
+    } catch (error) {
+        console.error('Error creating guest user:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error creating guest user ' + error.message
+        });
+    }
+},
     LoginUser : async(req,res)=>{
         
         try {
