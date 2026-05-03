@@ -61,6 +61,7 @@ import { userRouter } from "./routes/user.js";
 import { authRouter } from "./routes/auth.js";
 import { dashboardRouter } from './routes/dashboard.js';
 import { adminRouter } from "./routes/admin.js";
+import { contactRouter } from './routes/contact.js'
 import { friendRequestRouter } from './routes/friendRequest.js';
 import { messageRouter } from './routes/message.js'
 import  socialsRouter  from "./routes/socials.js";
@@ -80,6 +81,7 @@ app.use("/api/v1/user",userRouter)
 app.use("/api/v1/auth", authRouter)
 app.use("/api/v1/dashboard",dashboardRouter)
 app.use('/api/v1/techdebate',techDebateRouter)
+app.use('/api/v1/contact',contactRouter)
 app.use('/api/v1/friend-request', friendRequestRouter)
 app.use('/api/v1/message', messageRouter)
 app.use("/api/v1/blog", blogRouter)
