@@ -24,6 +24,50 @@ export const BlogController = {
             return res.json(toFrontEnd)
         }
         return res.json({success:false})
+    },getUnvalidatedBlogs:async(req,res)=>{
+        let blogsForFrontend = []
+        let LikedArray = []
+        let ownerArray=[]
+        let currentUserName = ""
+        User.findById(req.id).select("name").then(user=>{
+            currentUserName = user.name;
+        }).catch(err=>{
+            //("Error in fetching user name for blogs page "+err.message)
+        })
+        
+       
+       try {
+          const blogs = await Blog.find({validated:false})
+  .sort({ "activity.total_upvotes": -1 })
+  .populate([
+  {
+    path: 'activity.total_comments',
+    populate: { path: 'commentedBy', select: 'name' }
+  },
+  {
+    path: 'author',
+    select: 'name'
+  }
+])
+  .lean();
+
+  blogsForFrontend = blogs.map(blog => ({
+  ...blog,
+  comments: blog.activity.total_comments,  
+  activity: {
+    ...blog.activity,
+    total_comments: blog.activity.total_comments?.length || 0 
+  }
+}));
+            LikedArray = await Blog.find({ "activity.liked_by": req.id }).select("-author -activity.total_upvotes -activity.liked_by -__v -createdAt -updatedAt -title -des -banner -content")
+           ownerArray = blogs.filter(blog=>blog.author.toString() == req.id).map(blog=>blog._id.toString())
+
+       } catch (error) {
+        //("Error in fetching blogs "+error.message)
+        return res.json({message:"Error in fetching blogs "+error.message})
+       }
+
+        return res.json({BlogArray:blogsForFrontend,LikedArray,Name:currentUserName,OwnerArray:ownerArray})
     },
     getBlogs:async(req,res)=>{
         let blogsForFrontend = []
@@ -43,6 +87,7 @@ export const BlogController = {
   .populate({
     path: 'activity.total_comments',
     populate: { path: 'commentedBy', select: 'name' }
+   
   })
   .lean();
 
@@ -77,6 +122,10 @@ export const BlogController = {
     },
     downVoteBlog: async(req,res)=>{
          const {_id} = req.body;
+         const DidntLike = await Blog.findOne({_id,"activity.liked_by":req.id})
+         if (!DidntLike) {
+            return res.json({"message":"You have not upvoted this blog"})
+        }
         await Blog.findByIdAndUpdate(_id,{ $inc: { 'activity.total_upvotes': -1 } , $pull: { 'activity.liked_by': req.id } }
 );
         return res.json({"message":"downVoted successfully"})
@@ -105,7 +154,13 @@ export const BlogController = {
         const {_id} = req.body;
        //("Blog id to be deleted is ",_id)
        try {
-         const blog = await Blog.findById(_id) 
+         const blog = await Blog.findById(_id)
+         const user = await User.findById(req.id)
+         if (user.superadmin) {
+            await Blog.findByIdAndDelete(_id)
+            
+             return res.json({"message":"Blog deleted by Super Admin successfully"})
+         }
          if (blog.author.toString() == req.id.toString()) {
              await Blog.findByIdAndDelete(_id)
              return res.json({"message":"Blog deleted successfully"})
@@ -149,28 +204,43 @@ export const BlogController = {
                 return res.json({"message":"Error in adding comment "+error.message})
             }
     },
-    removeComment: async(req,res)=>{
-        const {_id} = req.body; //this is comment id
-        const comment = await Comment.findByIdAndDelete(_id)
-        if (!comment) {
-            return res.json({"message":"Comment not found"})
+    removeComment: async (req, res) => {
+  const { _id } = req.body;
+  const comment = await Comment.findById(_id).populate('blogId');
+  if (!comment) {
+    return res.status(404).json({ message: "Comment not found" });
+  }
+const user = await User.findById(req.id);
+  const isCommenter = comment.commentedBy.toString() === req.id.toString();
+  const isBlogAuthor = comment.blogId.author.toString() === req.id.toString();
+  console.log("Commenter ID:", comment.commentedBy);
+  console.log("Blog Author ID:", comment.blogId.author);
+  console.log("Requesting User ID:", req.id);
+  if (!isCommenter || !isBlogAuthor) {
+      if (user.superadmin) {
+        await Comment.deleteMany({ replyTo: comment._id });
+          await Comment.findByIdAndDelete(_id);
+          await Blog.findByIdAndUpdate(comment.blogId, {
+              $pull: { 'activity.total_comments': comment._id,'replyTo':comment._id  }
+            });
+            return res.json({ message: "Comment deleted successfully" });
         }
-        return res.json({"message":"Comment deleted successfully"})
-    },
+            return res.status(403).json({ message: "Unauthorized request" });
+  }
+  await Comment.deleteMany({ replyTo: comment._id });
+  await Comment.findByIdAndDelete(_id);
+  await Blog.findByIdAndUpdate(comment.blogId, {
+    $pull: { 'activity.total_comments': comment._id,'replyTo':comment._id }
+  });
+  
+  return res.json({ message: "Comment deleted successfully" });
+},
    getComments: async(req,res)=>{
     const {_id} = req.body; //_id is blog id
     const comments = await Comment.find({blogId:_id}).populate('commentedBy','name').sort({createdAt:-1})
     return res.json({comments})
    },
-   deleteAllBlogs: async(req,res)=>{
-    try {
-        await Blog.deleteMany({});
-        await Comment.deleteMany({});
-        return res.json({"message":"All blogs and comments deleted successfully"})
-    } catch (error) {
-        return res.json({"message":"Error in deleting all blogs "+error.message})
-    }   
-},
+
     getAllBlogsOfAUser: async(req,res)=>{
         const userId = req.id;
         try {
@@ -193,6 +263,60 @@ export const BlogController = {
         } catch (error) {
             return res.json({"error":"Error in fetching blogs "+error.message})
         }
+    },
+    validateBlog:async(req,res)=>{
+        const {_id} = req.body;
+        try {
+            const blog = await Blog.findByIdAndUpdate(_id, { $set: { validated: true } }, { new: true });
+            if (!blog) {
+                return res.json({"message":"Blog not found"})
+            }
+
+            return res.json({"message":"Blog validated successfully", blog})
+        } catch (error) {
+            return res.json({"message":"Error in validating blog "+error.message})
+        }
+    },
+    getValidatedBlogs:async(req,res)=>{
+   let blogsForFrontend = []
+        let LikedArray = []
+        let ownerArray=[]
+        let currentUserName = ""
+        User.findById(req.id).select("name").then(user=>{
+            currentUserName = user.name;
+        }).catch(err=>{
+            //("Error in fetching user name for blogs page "+err.message)
+        })
+        
+       
+       try {
+          const blogs = await Blog.find({validated:true})
+  .sort({ "activity.total_upvotes": -1 })
+  .populate({
+    path: 'activity.total_comments',
+    populate: { path: 'commentedBy', select: 'name' }
+   
+  })
+  .lean();
+
+  blogsForFrontend = blogs.map(blog => ({
+  ...blog,
+  comments: blog.activity.total_comments,  
+  activity: {
+    ...blog.activity,
+    total_comments: blog.activity.total_comments?.length || 0 
+  }
+}));
+            LikedArray = await Blog.find({ "activity.liked_by": req.id }).select("-author -activity.total_upvotes -activity.liked_by -__v -createdAt -updatedAt -title -des -banner -content")
+           ownerArray = blogs.filter(blog=>blog.author.toString() == req.id).map(blog=>blog._id.toString())
+
+       } catch (error) {
+        //("Error in fetching blogs "+error.message)
+        return res.json({message:"Error in fetching blogs "+error.message})
+       }
+
+        return res.json({BlogArray:blogsForFrontend,LikedArray,Name:currentUserName,OwnerArray:ownerArray})
     }
+
    
 }

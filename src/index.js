@@ -12,6 +12,43 @@ import cors from "cors"
 import connectDB from "./mongodb/index.js";
 const app = express();
 
+// Creating raw http server
+import http from 'http'
+const httpServer = http.createServer(app);
+
+// Creating a socket server
+import { Server } from 'socket.io';
+import SocketAuthMiddleware from './middleware/SocketAuthMiddleware.js';
+
+export const io = new Server(httpServer);
+
+export const userSocketMap = {}
+
+io.use(SocketAuthMiddleware)
+
+// Broadcasts all the online users on connection
+io.on('connect', (socket) => {
+    const userId = socket.data.userId;
+    userSocketMap[userId] = socket.id;
+
+    io.emit('GetUsers', Object.keys(userSocketMap));
+
+    socket.on('Typing', ({conversationId, receiverId}) => {
+        const receiverSocketId = userSocketMap[receiverId];
+        if(receiverSocketId) socket.to(receiverSocketId).emit('Typing', {conversationId, sender: userId});
+    });
+
+    socket.on('StopTyping', ({conversationId, receiverId}) => {
+        const receiverSocketId = userSocketMap[receiverId];
+        if(receiverSocketId) socket.to(receiverId).emit('StopTyping', {conversationId})
+    })
+
+    socket.on('disconnect', () => {
+        delete userSocketMap[userId];
+        io.emit('GetUsers', Object.keys(userSocketMap));
+    })
+})
+
 // Enable JSON body parsing
 app.use(express.json());
 app.use(cors());
@@ -24,11 +61,17 @@ import { userRouter } from "./routes/user.js";
 import { authRouter } from "./routes/auth.js";
 import { dashboardRouter } from './routes/dashboard.js';
 import { adminRouter } from "./routes/admin.js";
+import { contactRouter } from './routes/contact.js'
+import { friendRequestRouter } from './routes/friendRequest.js';
+import { messageRouter } from './routes/message.js'
+import  socialsRouter  from "./routes/socials.js";
+
 import { blogRouter } from "./routes/blog.js";
 import { problemRouter } from "./routes/problems.js";
 import { submissionRouter } from "./routes/submissions.js";
 import { exerciseRouter } from "./routes/exercises.js";
 import { leaderboardRouter, userStatsRouter } from "./routes/leaderboard.js";
+
 
 app.use('/api/v1/dye-application', dyeRoutes)
 app.use("/api/v1/admin",adminRouter)
@@ -36,6 +79,9 @@ app.use("/api/v1/user",userRouter)
 app.use("/api/v1/auth", authRouter)
 app.use("/api/v1/dashboard",dashboardRouter)
 app.use('/api/v1/techdebate',techDebateRouter)
+app.use('/api/v1/contact',contactRouter)
+app.use('/api/v1/friend-request', friendRequestRouter)
+app.use('/api/v1/message', messageRouter)
 app.use("/api/v1/blog", blogRouter)
 
 app.use("/api/auth", authRouter)
@@ -44,6 +90,7 @@ app.use("/api/submissions", submissionRouter)
 app.use("/api/exercises", exerciseRouter)
 app.use("/api/leaderboard", leaderboardRouter)
 app.use("/api/users", userStatsRouter)
+app.use("/api/v1/socials", socialsRouter);
 
 // QR router should be LAST since it catches all remaining routes
 app.use("/",qrRouter)
@@ -51,7 +98,7 @@ app.use("/",qrRouter)
 
 // Start server
 const PORT = process.env.PORT || 3009;
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
     console.log(`Server listening on port ${PORT}`);
 });
 

@@ -29,6 +29,10 @@ const userSchema = new mongoose.Schema({
   superadmin:{
     type:Boolean,
     default:false
+  },
+  guest:{
+    type:Boolean,
+    default:false
   }
 }, {
   timestamps: true
