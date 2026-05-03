@@ -27,12 +27,6 @@ const problemSchema = new mongoose.Schema({
   },
   tags: [{ type: String, trim: true }],
   statement: { type: statementSchema, default: () => ({}) },
-  starterCode: {
-    javascript: { type: String, default: '' },
-    python: { type: String, default: '' },
-    cpp: { type: String, default: '' },
-    java: { type: String, default: '' },
-  },
   allowedLanguages: {
     type: [{ type: String }],
     default: ['javascript', 'python', 'cpp', 'java'],

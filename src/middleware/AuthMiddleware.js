@@ -1,5 +1,20 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js'
+
+// Sets req.id if a valid token is present, but never blocks the request
+export const OptionalVerifyToken = async (req, res, next) => {
+  try {
+    const header = req.headers.authorization;
+    if (!header) return next();
+    const token = header.split(' ')[1];
+    if (!token) return next();
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findOne({ _id: decoded.id });
+    if (user) req.id = user._id;
+  } catch (_) { /* invalid token — just skip */ }
+  next();
+};
+
 export const VerifyToken = async (req, res, next) => {
         try {
             let token;

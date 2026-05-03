@@ -13,17 +13,24 @@ export const TestCaseController = {
 
   add: async (req, res) => {
     try {
+      console.log(`[TestCase:add] Problem ${req.params.id} — adding ${req.body.length} test case(s)`);
       const problem = await Problem.findById(req.params.id);
-      if (!problem) return res.status(404).json({ success: false, message: 'Problem not found' });
+      if (!problem) {
+        console.log(`[TestCase:add] Problem ${req.params.id} not found`);
+        return res.status(404).json({ success: false, message: 'Problem not found' });
+      }
 
       const docs = req.body.map((tc) => ({
         problem: problem._id,
         input: tc.input,
         expectedOutput: tc.expectedOutput,
       }));
+      console.log(`[TestCase:add] Inserting test cases for "${problem.title}":`, docs.map((d, i) => `\n  [${i}] input=${JSON.stringify(d.input)} expected=${JSON.stringify(d.expectedOutput)}`).join(''));
       const testCases = await TestCase.insertMany(docs);
+      console.log(`[TestCase:add] Saved ${testCases.length} test case(s), IDs: ${testCases.map((tc) => tc._id).join(', ')}`);
       res.status(201).json({ success: true, testCases });
     } catch (error) {
+      console.error(`[TestCase:add] Error:`, error.message);
       res.status(500).json({ success: false, message: error.message });
     }
   },
@@ -43,6 +50,23 @@ export const TestCaseController = {
       res.json({ success: true, testCases });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
+    }
+  },
+
+  update: async (req, res) => {
+    try {
+      const allowed = ['isSample', 'input', 'expectedOutput']
+      const updates = {}
+      allowed.forEach(key => { if (req.body[key] !== undefined) updates[key] = req.body[key] })
+      const tc = await TestCase.findOneAndUpdate(
+        { _id: req.params.tcId, problem: req.params.id },
+        updates,
+        { new: true }
+      )
+      if (!tc) return res.status(404).json({ success: false, message: 'Test case not found' })
+      res.json({ success: true, testCase: tc })
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message })
     }
   },
 
