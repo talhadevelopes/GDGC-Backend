@@ -238,6 +238,69 @@ export const AuthController = {
             })
         }
     },
+    GuestLogin: async (req, res) => {
+    const { name, email } = req.body;
+
+    if (!name || !email) {
+        return res.status(400).json({
+            success: false,
+            message: 'Please provide name and email for guest login'
+        });
+    }
+
+    try {
+        const existingUser = await User.findOne({ email }); // ← awaited
+        if (existingUser) {
+            return res.status(400).json({
+                success: false,
+                message: 'A user with this email already exists. Please log in instead.'
+            });
+        }
+
+        const password = nanoid();
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(password, salt);
+
+        const guestUser = new User({
+            name,
+            email,
+            password: hash,
+            guest: true,
+            qr_id: 'abcd'
+        });
+
+        await guestUser.save(); // ← also fix the [guestUser.save](http://...) hyperlink bug
+
+        const transporter = nodemailer.createTransport({
+            host: "smtp-relay.brevo.com",
+            port: 587,
+            secure: false,
+            auth: {
+                user: process.env.BREVO_USER,
+                pass: process.env.BREVO_PASS,
+            }
+        });
+
+        await transporter.sendMail({
+            from: "GDGC MJCET <gdgc.noreply@gmail.com>",
+            to: email,
+            subject: "Password for GDGC account",
+            html: `<h1>Hello from the Web Dev Team</h1>Thank you for Signing up, Here is your password : <b>${password}</b>...`
+        });
+
+        return res.json({
+            success: true,
+            message: 'Guest user created successfully'
+        });
+
+    } catch (error) {
+        console.error('Error creating guest user:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error creating guest user ' + error.message
+        });
+    }
+},
     LoginUser : async(req,res)=>{
         
         try {
@@ -265,8 +328,10 @@ export const AuthController = {
             }
             if(await bcrypt.compare(password, user.password)){
                 const token = jwt.sign({id:user._id}, process.env.JWT_SECRET);
+               
                 return res.json({
-                    token:token
+                    token:token,
+                    guest:user.guest,
                 })
             }
             else{
@@ -395,5 +460,18 @@ export const AuthController = {
         return res.json({
             success:true
         })
+    },
+    deleteAllguestUsers: async(req,res)=>{
+        try {
+                res.status(200).json({
+                    "message":" Testers Not Allowed Here, Get the Hell Out ",
+                    success:true
+                })
+        } catch (error) {
+            res.status(500).json({
+                success:false,
+                message:error.message
+            })
+        }
     }
 }

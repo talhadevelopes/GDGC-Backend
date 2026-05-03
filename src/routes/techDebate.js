@@ -21,3 +21,8 @@ techDebateRouter.route('/delete-debates').delete( TechDebateController.deleteAll
 techDebateRouter.route('/delete-clubs').delete(TechDebateController.deleteAllClubDocuments)
 techDebateRouter.route('/pause').post( TechDebateController.pauseDebate)
 techDebateRouter.route('/resume').post(TechDebateController.resumeDebate)
+// techDebateRouter.route('/end-current-debate').post( TechDebateController.endCurrentDebate)
+// techDebateRouter.route('/get-clubs').get( TechDebateController.getClubIdUsingName)
+// techDebateRouter.route('/make-debate').post( TechDebateController.makeTheDebateLiveAgain)
+// techDebateRouter.route('/get-all-debates').get( TechDebateController.allhistory)
+//stuff i be doing for media team
