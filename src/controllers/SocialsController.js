@@ -1,5 +1,6 @@
 import { success } from "zod";
 import Socials from "../models/Socials.js";
+import LeetCode from "../models/LeetCode.js";
 
 
 
@@ -12,19 +13,22 @@ const extractLeetcodeUser= (url)=>
 
 
 //FUCTION TO VERIFY LEETCODE IDS 
-const verifyLeetcodeUrl = async(leetusername)=>{
-    try{
-            const res = await fetch(`https://alfa-leetcode-api.onrender.com/${leetusername}/profile`);
-            const data = await res.json();
+const verifyLeetcodeUrl = async (leetusername) => {
+  try {
+    const res = await fetch(
+      `https://alfa-leetcode-api.onrender.com/${leetusername}`
+    );
+    const data = await res.json();
 
-            if (!data || data.status==="error"){
-                return false;
-            }
-            return true;
-        }
-        catch{
-            return false;
-        }
+    if (data.errors?.length) {
+      return false;
+    }
+
+    return true;
+
+  } catch {
+    return false;
+  }
 };
 
 const processLeetcode = async (url) => {
@@ -41,6 +45,10 @@ const processLeetcode = async (url) => {
     if (!isValid) {
         throw new Error("LeetCode user does not exist");
     }
+
+    console.log("URL:", url);
+    console.log("Extracted:", extracted);
+    console.log("Valid:", isValid);
 
     return extracted;
 };
@@ -59,38 +67,59 @@ export const updateSocials = async(req,res)=> {
             if (req.body.instagram !== undefined) socials.instagram = req.body.instagram;
             if (req.body.twitter !== undefined) socials.twitter = req.body.twitter;
 
-            if (req.body.leetcode !== undefined) {
-    try {
-        socials.leetcode = await processLeetcode(req.body.leetcode);
-    } catch (err) {
-        return res.status(400).json({
-            success: false,
-            message: err.message
-        });
-    }
-}
-        //     if (req.body.leetcode !== undefined) {
-        //         const leetusername = extractLeetcodeUser(req.body.leetcode);
-
-        //         if (!leetusername) {
-        //             return res.status(400).json({
-        //             success: false,
-        //             message: "Invalid LeetCode URL"
-        //         });
-        //     }
-
-        //     const isValid = await verifyLeetcodeUrl(leetusername);
-
-        //     if (!isValid) {
-        //         return res.status(400).json({
-        //         success: false,
-        //         message: "LeetCode user does not exist"
-        //     });
-        // }
-        // socials.leetcode = leetusername;
-        // }
-
+            if (req.body.leetcode) {//!== undefined)
+                try {
+                socials.leetcode = await processLeetcode(req.body.leetcode);
+            } catch (err) {
+                    return res.status(400).json({
+                    success: false,
+                    message: err.message
+                    });
+                }
+            }
             await socials.save();
+            //logic for saving leetcode username in leetcode docc and also storing data for the first timei in the leaderboard bf cron
+            if(socials.leetcode)
+            {
+                try{
+                    const username = socials.leetcode;
+                    const res = await fetch(`https://alfa-leetcode-api.onrender.com/${username}/profile`);
+                    if (!response.ok) throw new Error("LeetCode API failed");
+                    const data= await res.json();
+                    if(data && data.status !== "error")
+                    {
+                        let contestRating=0;
+                        try{
+                                    
+                            const contestres= await fetch(`https://alfa-leetcode-api.onrender.com/${username}/contest`);
+                            const contestData = await contestres.json();
+                            if (contestData?.contestParticipation && contestData.contestParticipation.length > 0) {
+                                const latestContest =contestData.contestParticipation[contestData.contestParticipation.length - 1];
+                                contestRating = latestContest.rating || 0;
+                            }
+                        }
+                        catch {}
+
+                        await LeetCode.findOneAndUpdate(
+                            {user: userId},
+                            {
+                                user: userId,
+                                username : username,
+                                totalSolved: data.totalSolved,
+                                easySolved: data.easySolved,
+                                mediumSolved: data.mediumSolved,
+                                hardSolved: data.hardSolved,
+                                contestRating: contestRating
+                            },
+                            {upsert: true}
+                         );
+
+                    }
+                }
+                catch (e) {
+                        console.log("Immediate fetch failed",e.message);
+                }
+            }
 
             return res.json({
                 success: true,
@@ -98,27 +127,6 @@ export const updateSocials = async(req,res)=> {
                 data: socials
             });
         }
-
-        //ONLY FOR LEETCODE VERIFICATION AND UGHHH ANYWAYS
-        // let leetcodeusername="";
-        // if(req.body.leetcode){
-        //     const extracted= extractLeetcodeUser(req.body.leetcode);
-        //     if(!extracted){
-        //         return res.status(400).json({
-        //             success: false,
-        //             message: "Invalid url for leetcode"
-        //         })
-
-        //     }
-        //     const isValid = await verifyLeetcodeUrl(extracted);
-        //     if(!isValid){
-        //         return res.status(400).json({
-        //             success: false,
-        //             message: "Invalid url for leetcode"
-        //         })
-        //     }
-        //     leetcodeusername = extracted;
-        // }
         let leetcodeusername = "";
         if (req.body.leetcode) {
             try {

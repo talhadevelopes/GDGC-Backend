@@ -2,10 +2,6 @@ import cron from 'node-cron';
 import Socials from '../models/Socials.js';
 import LeetCode from '../models/LeetCode.js';
 
-
-
-
-
 const extractLeetcodeUser= (url)=>
 {
     const regex = /leetcode\.com\/(?:u\/)?([a-zA-Z0-9_-]+)\/?/;
@@ -13,18 +9,25 @@ const extractLeetcodeUser= (url)=>
     return match ? match[1] : null;    
 }
 
-
-
 const fetchLeetcodeData=async() => {
 
 // first get the leetcode profiels from the socials doc :--
 const users = await Socials.find({
-    leetcode: {$ne: ""}//$ne is for leetode field not eq to "" empty 
+     leetcode: { $exists: true, $ne: "" }//$ne is for leetode field not eq to "" empty 
 });
+ console.log("Users found:", users.length);
 for (let x of users){
     // const username = x.leetcode;
     // const username = extractLeetcodeUser(x.leetcode);
-    const username = x.leetcode;
+    // const username = x.leetcode;
+    const raw = x.leetcode;
+
+const username = raw.includes("leetcode.com")? extractLeetcodeUser(raw): raw;
+
+if (!username) {
+  console.log("Invalid username:", raw);
+  continue;
+}
 try{
 const res = await fetch(`https://alfa-leetcode-api.onrender.com/${username}/profile`);
 const data = await res.json();
@@ -88,8 +91,8 @@ catch(error){
 };
 
 // cron job logic (pandra ghante):-
-cron.schedule("0 */15 * * *", () => {
-    console.log("Running every 2 mins...");
+cron.schedule("* * * * *",  () => {
+    console.log("Running----..");
     fetchLeetcodeData();
 });
 

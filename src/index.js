@@ -29,6 +29,9 @@ import { authRouter } from "./routes/auth.js";
 import { dashboardRouter } from './routes/dashboard.js';
 import { adminRouter } from "./routes/admin.js";
 import  socialsRouter  from "./routes/socials.js";
+// import { leaderboardrouter } from "./routes/leetcode.js"
+import leaderboardrouter from "./routes/leetcode.js";
+
 
 // app.get('/',(req , res)=>{
 //     res.json({
@@ -46,6 +49,8 @@ app.use("/api/v1/dashboard",dashboardRouter)
 app.use('/api/v1/techdebate',techDebateRouter)
 
 app.use("/api/v1/socials", socialsRouter);
+app.use("/api/v1/leaderboard", leaderboardrouter);
+
 
 // QR router should be LAST since it catches all remaining routes
 app.use("/",qrRouter)
