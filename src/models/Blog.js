@@ -27,6 +27,10 @@ const blogSchema = new mongoose.Schema({
         ref:'Comment',
         
     }]
+   },
+   validated:{
+    type:Boolean,
+    default:false
    }
 },{timestamps:true});
 export default mongoose.model('Blog', blogSchema);

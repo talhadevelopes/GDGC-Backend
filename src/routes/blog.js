@@ -1,6 +1,7 @@
 import express from "express";
 import {BlogController} from "../controllers/BlogController.js";
 import { VerifyToken } from "../middleware/AuthMiddleware.js";
+import SuperAdminMiddleware from "../middleware/SuperAdminMiddleware.js";
 export const blogRouter = express.Router()
 
 
@@ -14,3 +15,5 @@ blogRouter.route('/add-comment').post(VerifyToken,BlogController.addComment)
 blogRouter.route('/remove-comment').post(VerifyToken,BlogController.removeComment)
 blogRouter.route('/get-comments').post(VerifyToken,BlogController.getComments)
 blogRouter.route('/my-blogs').get(VerifyToken,BlogController.getAllBlogsOfAUser)
+blogRouter.route('/get-unvalidated-blogs').get(VerifyToken,SuperAdminMiddleware,BlogController.getUnvalidatedBlogs)
+blogRouter.route('/validate-blog').post(VerifyToken,SuperAdminMiddleware,BlogController.validateBlog)
