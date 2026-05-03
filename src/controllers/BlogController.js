@@ -82,7 +82,7 @@ export const BlogController = {
         
        
        try {
-          const blogs = await Blog.find({validated:true})
+          const blogs = await Blog.find()
   .sort({ "activity.total_upvotes": -1 })
   .populate({
     path: 'activity.total_comments',
@@ -276,7 +276,47 @@ const user = await User.findById(req.id);
         } catch (error) {
             return res.json({"message":"Error in validating blog "+error.message})
         }
-    }
+    },
+    getValidatedBlogs:async(req,res)=>{
+   let blogsForFrontend = []
+        let LikedArray = []
+        let ownerArray=[]
+        let currentUserName = ""
+        User.findById(req.id).select("name").then(user=>{
+            currentUserName = user.name;
+        }).catch(err=>{
+            //("Error in fetching user name for blogs page "+err.message)
+        })
+        
+       
+       try {
+          const blogs = await Blog.find({validated:true})
+  .sort({ "activity.total_upvotes": -1 })
+  .populate({
+    path: 'activity.total_comments',
+    populate: { path: 'commentedBy', select: 'name' }
    
+  })
+  .lean();
+
+  blogsForFrontend = blogs.map(blog => ({
+  ...blog,
+  comments: blog.activity.total_comments,  
+  activity: {
+    ...blog.activity,
+    total_comments: blog.activity.total_comments?.length || 0 
+  }
+}));
+            LikedArray = await Blog.find({ "activity.liked_by": req.id }).select("-author -activity.total_upvotes -activity.liked_by -__v -createdAt -updatedAt -title -des -banner -content")
+           ownerArray = blogs.filter(blog=>blog.author.toString() == req.id).map(blog=>blog._id.toString())
+
+       } catch (error) {
+        //("Error in fetching blogs "+error.message)
+        return res.json({message:"Error in fetching blogs "+error.message})
+       }
+
+        return res.json({BlogArray:blogsForFrontend,LikedArray,Name:currentUserName,OwnerArray:ownerArray})
+    }
+
    
 }
