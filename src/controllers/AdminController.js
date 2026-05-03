@@ -138,7 +138,8 @@ const AdminController={
           return res.json({ success: true, contacts });
       } catch (error) {
           return res.json({ success: false, error: error.message, contacts: null });
-      },
+      }
+    },
     getStats: async (req, res) => {
       try {
         const totalUsers = await User.countDocuments();
@@ -152,8 +153,8 @@ const AdminController={
       } catch (err) {
         res.status(500).json({ success: false, message: "Failed to fetch stats." });
       }
+    }
 }
-}
-}
+
 
 export default AdminController;
