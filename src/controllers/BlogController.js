@@ -24,6 +24,50 @@ export const BlogController = {
             return res.json(toFrontEnd)
         }
         return res.json({success:false})
+    },getUnvalidatedBlogs:async(req,res)=>{
+        let blogsForFrontend = []
+        let LikedArray = []
+        let ownerArray=[]
+        let currentUserName = ""
+        User.findById(req.id).select("name").then(user=>{
+            currentUserName = user.name;
+        }).catch(err=>{
+            //("Error in fetching user name for blogs page "+err.message)
+        })
+        
+       
+       try {
+          const blogs = await Blog.find({validated:false})
+  .sort({ "activity.total_upvotes": -1 })
+  .populate([
+  {
+    path: 'activity.total_comments',
+    populate: { path: 'commentedBy', select: 'name' }
+  },
+  {
+    path: 'author',
+    select: 'name'
+  }
+])
+  .lean();
+
+  blogsForFrontend = blogs.map(blog => ({
+  ...blog,
+  comments: blog.activity.total_comments,  
+  activity: {
+    ...blog.activity,
+    total_comments: blog.activity.total_comments?.length || 0 
+  }
+}));
+            LikedArray = await Blog.find({ "activity.liked_by": req.id }).select("-author -activity.total_upvotes -activity.liked_by -__v -createdAt -updatedAt -title -des -banner -content")
+           ownerArray = blogs.filter(blog=>blog.author.toString() == req.id).map(blog=>blog._id.toString())
+
+       } catch (error) {
+        //("Error in fetching blogs "+error.message)
+        return res.json({message:"Error in fetching blogs "+error.message})
+       }
+
+        return res.json({BlogArray:blogsForFrontend,LikedArray,Name:currentUserName,OwnerArray:ownerArray})
     },
     getBlogs:async(req,res)=>{
         let blogsForFrontend = []
@@ -38,11 +82,12 @@ export const BlogController = {
         
        
        try {
-          const blogs = await Blog.find()
+          const blogs = await Blog.find({validated:true})
   .sort({ "activity.total_upvotes": -1 })
   .populate({
     path: 'activity.total_comments',
     populate: { path: 'commentedBy', select: 'name' }
+   
   })
   .lean();
 
@@ -165,18 +210,27 @@ export const BlogController = {
   if (!comment) {
     return res.status(404).json({ message: "Comment not found" });
   }
-
+const user = await User.findById(req.id);
   const isCommenter = comment.commentedBy.toString() === req.id.toString();
   const isBlogAuthor = comment.blogId.author.toString() === req.id.toString();
   console.log("Commenter ID:", comment.commentedBy);
   console.log("Blog Author ID:", comment.blogId.author);
   console.log("Requesting User ID:", req.id);
   if (!isCommenter || !isBlogAuthor) {
-    return res.status(403).json({ message: "Unauthorized request" });
+      if (user.superadmin) {
+        await Comment.deleteMany({ replyTo: comment._id });
+          await Comment.findByIdAndDelete(_id);
+          await Blog.findByIdAndUpdate(comment.blogId, {
+              $pull: { 'activity.total_comments': comment._id,'replyTo':comment._id  }
+            });
+            return res.json({ message: "Comment deleted successfully" });
+        }
+            return res.status(403).json({ message: "Unauthorized request" });
   }
+  await Comment.deleteMany({ replyTo: comment._id });
   await Comment.findByIdAndDelete(_id);
   await Blog.findByIdAndUpdate(comment.blogId, {
-    $pull: { 'activity.total_comments': comment._id }
+    $pull: { 'activity.total_comments': comment._id,'replyTo':comment._id }
   });
   
   return res.json({ message: "Comment deleted successfully" });
@@ -210,6 +264,19 @@ export const BlogController = {
             return res.json({"error":"Error in fetching blogs "+error.message})
         }
     },
+    validateBlog:async(req,res)=>{
+        const {_id} = req.body;
+        try {
+            const blog = await Blog.findByIdAndUpdate(_id, { $set: { validated: true } }, { new: true });
+            if (!blog) {
+                return res.json({"message":"Blog not found"})
+            }
+
+            return res.json({"message":"Blog validated successfully", blog})
+        } catch (error) {
+            return res.json({"message":"Error in validating blog "+error.message})
+        }
+    }
    
    
 }

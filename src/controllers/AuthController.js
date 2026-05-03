@@ -268,6 +268,7 @@ export const AuthController = {
             guest: true,
             qr_id: 'abcd'
         });
+        console.log(guestUser)
 
         await guestUser.save(); // ← also fix the [guestUser.save](http://...) hyperlink bug
 
