@@ -146,14 +146,14 @@ const AdminController={
         const totalAdmins = await User.countDocuments({ admin: true, superadmin: false });
         const totalSuperAdmins = await User.countDocuments({ superadmin: true });
 
-        res.json({
-          success: true,
-          stats: { totalUsers, totalAdmins, totalSuperAdmins },
-        });
-      } catch (err) {
-        res.status(500).json({ success: false, message: "Failed to fetch stats." });
-      }
-    }
+    res.json({
+      success: true,
+      stats: { totalUsers, totalAdmins, totalSuperAdmins },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to fetch stats." });
+  }
+}
 }
 
 

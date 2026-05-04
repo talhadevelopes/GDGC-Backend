@@ -84,11 +84,16 @@ export const BlogController = {
        try {
           const blogs = await Blog.find()
   .sort({ "activity.total_upvotes": -1 })
-  .populate({
+  .populate([{
     path: 'activity.total_comments',
     populate: { path: 'commentedBy', select: 'name' }
    
-  })
+  }
+,
+{
+    path: 'author',
+    select: 'name'
+}])
   .lean();
 
   blogsForFrontend = blogs.map(blog => ({
@@ -216,7 +221,7 @@ const user = await User.findById(req.id);
   console.log("Commenter ID:", comment.commentedBy);
   console.log("Blog Author ID:", comment.blogId.author);
   console.log("Requesting User ID:", req.id);
-  if (!isCommenter || !isBlogAuthor) {
+  if (!isCommenter && !isBlogAuthor) {
       if (user.superadmin) {
         await Comment.deleteMany({ replyTo: comment._id });
           await Comment.findByIdAndDelete(_id);
