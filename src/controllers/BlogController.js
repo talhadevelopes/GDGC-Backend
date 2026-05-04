@@ -84,11 +84,16 @@ export const BlogController = {
        try {
           const blogs = await Blog.find()
   .sort({ "activity.total_upvotes": -1 })
-  .populate({
+  .populate([{
     path: 'activity.total_comments',
     populate: { path: 'commentedBy', select: 'name' }
    
-  })
+  }
+,
+{
+    path: 'author',
+    select: 'name'
+}])
   .lean();
 
   blogsForFrontend = blogs.map(blog => ({
