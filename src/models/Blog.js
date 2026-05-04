@@ -12,13 +12,25 @@ const blogSchema = new mongoose.Schema({
    author:{
     type:mongoose.Schema.Types.ObjectId,
     required:true,
-    ref:'users'
+    ref:'User'
    },
    activity:{
     total_upvotes:{
         type:Number,
         default:0
-    }
+    },liked_by:{
+        type:[mongoose.Schema.Types.ObjectId],
+        ref:'User'
+    },
+    total_comments:[{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:'Comment',
+        
+    }]
+   },
+   validated:{
+    type:Boolean,
+    default:false
    }
 },{timestamps:true});
 export default mongoose.model('Blog', blogSchema);

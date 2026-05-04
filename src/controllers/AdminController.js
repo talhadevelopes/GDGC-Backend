@@ -2,7 +2,7 @@ import { Verify, verify } from "crypto";
 import Blog from "../models/Blog.js";
 import User from "../models/User.js";
 import { success } from "zod";
-
+import Contact from "../models/Contact.js";
 // an admin cannot create a new admin 
 
 const AdminController={
@@ -116,7 +116,6 @@ const AdminController={
             return res.json({success:false,error:error.message,users:null})
         }
     },
-
     getAllAdmins: async(req,res)=>{
         try {
             const admins = await User.find({admin:true}).select("-password")
@@ -133,20 +132,29 @@ const AdminController={
             return res.json({success:false,error:error.message,superAdmins:null})
         }
     },
+    getContacts: async (req, res) => {
+      try {
+          const contacts = await Contact.find().sort({ createdAt: -1 });
+          return res.json({ success: true, contacts });
+      } catch (error) {
+          return res.json({ success: false, error: error.message, contacts: null });
+      }
+    },
     getStats: async (req, res) => {
-        try {
-            const totalUsers = await User.countDocuments();
-            const totalAdmins = await User.countDocuments({ admin: true, superadmin: false });
-            const totalSuperAdmins = await User.countDocuments({ superadmin: true });
+      try {
+        const totalUsers = await User.countDocuments();
+        const totalAdmins = await User.countDocuments({ admin: true, superadmin: false });
+        const totalSuperAdmins = await User.countDocuments({ superadmin: true });
 
-            res.json({
-            success: true,
-            stats: { totalUsers, totalAdmins, totalSuperAdmins },
-            });
-        } catch (err) {
-            res.status(500).json({ success: false, message: "Failed to fetch stats." });
-        }
-    }
+    res.json({
+      success: true,
+      stats: { totalUsers, totalAdmins, totalSuperAdmins },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to fetch stats." });
+  }
 }
+}
+
 
 export default AdminController;

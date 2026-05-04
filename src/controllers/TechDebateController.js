@@ -53,9 +53,9 @@ export const TechDebateController = {
                     leftTeam: { $in: [leftteam._id, rightteam._id] },
                     rightTeam: { $in: [leftteam._id, rightteam._id] }
             });
-                if(alreadyExists){
-                    return res.status(400).json({"error":"A debate between these two teams already exists"})
-                }
+                // if(alreadyExists){
+                //     return res.status(400).json({"error":"A debate between these two teams already exists"})
+                // }
                 const debate = await new Debate({
                     leftTeam:leftteam._id,
                     rightTeam:rightteam._id,
@@ -78,7 +78,7 @@ export const TechDebateController = {
             const { leftTeam,rightTeam} = req.body;
             const right= await Club.findOne({clubName:rightTeam.clubName})
             const left = await Club.findOne({clubName:leftTeam.clubName})
-            // console.log(right , left)
+            console.log(right , left)
             const debate = await Debate.findOne({leftTeam:left._id,rightTeam:right._id})
             let winner;
             // console.log("hello" , debate , right , left)
@@ -305,6 +305,7 @@ vote: async (req,res) => {
     }
 },
 history: async (req, res) => {
+
     try {
         const debates = await Debate.find({isLive:false}).sort({ updatedAt: -1 }); 
         
@@ -342,6 +343,7 @@ history: async (req, res) => {
             console.log("-------------------------------------")
 
             return {
+                _id: debate._id,
                 topic: debate.Topic,
                 date: debate.updatedAt,
                 leftTeam: {
@@ -416,5 +418,57 @@ resumeDebate : async (req,res) => {
     } catch (error) {
         return res.status(500).json({"error":error.message})
     }   
+},
+
+endCurrentDebate : async (req,res) => {
+    try {
+        const debate = await Debate.findOneAndUpdate(
+            {isLive:true},
+            {isLive:false},
+            {new:true}
+        )   
+        if(!debate){
+            return res.status(404).json({"error":"No live debate found"})
+        }
+        return res.status(200).json({"success":true,"debate":debate})
+    } catch (error) {
+        return res.status(500).json({"error":error.message})
+    }
+},
+makeTheDebateLiveAgain : async (req,res) => {
+  //the debate id will be given , i want to alive it
+    try {
+        const { debateId } = req.body;
+        const debate = await Debate.findByIdAndUpdate(
+            debateId,
+            {isLive:true},
+            {new:true}
+        )
+        if(!debate){
+            return res.status(404).json({"error":"Debate not found"})
+        }
+        return res.status(200).json({"success":true,"debate":debate})
+    } catch (error) {
+        return res.status(500).json({"error":error.message})
+    }
+
+},
+getClubIdUsingName : async (req,res) => {
+   //in the club , just retreive all the clubs and their ids 
+    try {
+        const clubs = await Club.find({}).select("clubName _id");
+        return res.status(200).json({"success":true,clubs})
+    } catch (error) {
+        return res.status(500).json({"error":error.message})
+    }
+},
+allhistory: async (req,res) => {
+    //i want all the debates sorted in oldest first order , all the debates that exists in  db
+    try {
+        const debates = await Debate.find({}).sort({ createdAt: 1 }); 
+        return res.status(200).json({"success":true,debates})
+    } catch (error) {
+        return res.status(500).json({"error":error.message})
+    }
 }
 }
