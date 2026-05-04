@@ -15,5 +15,10 @@ authRouter.route('/signup-guest').post(AuthController.GuestLogin)
 // ^ this is redundant we are using get-dashboard to do the same 
 authRouter.route('/change-password').post(VerifyToken,AuthController.ChangePassword)
 authRouter.route('/simple-verify').get(VerifyToken,AuthController.SimpleVerify)
+authRouter.route('/initial-setup-check').get(InitialSetupVerify,AuthController.SimpleVerify)
+
+authRouter.route('/register').post(AuthController.Register)
+authRouter.route('/login').post(AuthController.LoginUser)
+authRouter.route('/me').get(VerifyToken, AuthController.Me)
 authRouter.route('/delete-all-guest-users').get(VerifyToken,SuperAdminMiddleware,AuthController.deleteAllguestUsers)
 authRouter.route('/initial-setup-check').get(InitialSetupVerify,AuthController.SimpleVerify)
