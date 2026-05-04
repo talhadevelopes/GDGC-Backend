@@ -8,7 +8,6 @@ import bcrypt from "bcryptjs";
 export const BuildWeekController ={
     submitForm: async(req,res)=>{
     try {
-        console.log("bye")
         const requiredBody = z.object({
             name:z.string(),
             email:z.email(),
@@ -21,13 +20,13 @@ export const BuildWeekController ={
             leetcode:z.string()
         })
         const parsedBody = requiredBody.safeParse(req.body);
-        console.log("hi")
+        
         if(!parsedBody.success){
             return res.status(404).json({
                 message:parsedBody.error
             })
         }
-        const {name,email,college,roll_no,phone_no,domain1,domain2,github,leetcode} = re
+        const {name,email,college,roll_no,phone_no,domain1,domain2,github,leetcode} = req.body
         let userId 
         let responseMessage
         const user = await User.findOne({email});
@@ -86,16 +85,17 @@ export const BuildWeekController ={
                     domain1,
                     domain2,
                 })
-                if((github.startswith("https://github.com/"))){
+                if((github.startsWith("https://github.com/"))){
                     await Socials.updateOne({user:userId},{github})
                 }
-                if((leetcode.startswith("https://leetcode.com/"))){
+                if((leetcode.startsWith("https://leetcode.com/"))){
                     await Socials.updateOne({user:userId},{leetcode})
                 }
                  res.status(200).json({
                     message:responseMessage
                 })
     } catch (error) {
+        console.log(error)
         return res.status(500).json({
             message: error.message
         });
