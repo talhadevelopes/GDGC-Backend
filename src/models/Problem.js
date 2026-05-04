@@ -14,6 +14,8 @@ const statementSchema = new mongoose.Schema(
     paragraphs: [{ type: String }],
     examples: [exampleSchema],
     constraints: [{ type: String }],
+    inputFormat:  { type: String, default: '' },
+    outputFormat: { type: String, default: '' },
   },
   { _id: false }
 );
