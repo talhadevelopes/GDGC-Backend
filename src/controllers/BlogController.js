@@ -221,7 +221,7 @@ const user = await User.findById(req.id);
   console.log("Commenter ID:", comment.commentedBy);
   console.log("Blog Author ID:", comment.blogId.author);
   console.log("Requesting User ID:", req.id);
-  if (!isCommenter || !isBlogAuthor) {
+  if (!isCommenter && !isBlogAuthor) {
       if (user.superadmin) {
         await Comment.deleteMany({ replyTo: comment._id });
           await Comment.findByIdAndDelete(_id);
