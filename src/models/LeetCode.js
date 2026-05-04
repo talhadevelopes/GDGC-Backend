@@ -1,41 +1,47 @@
 import mongoose from "mongoose";
 
-
-const leetcodeSchema = new mongoose.Schema({
+const leetcodeSchema = new mongoose.Schema(
+  {
     user: {
-        type:mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true ,
-        unique: true
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      unique: true,
     },
     username: {
-        type: String,
-        required: true
+      type: String,
+      required: true,
     },
 
-    totalSolved:{ 
-        type: Number,
-        default: 0
+    totalSolved: {
+      type: Number,
+      default: 0,
     },
-    easySolved:{ 
-        type: Number,
-        default: 0
+    easySolved: {
+      type: Number,
+      default: 0,
     },
-    mediumSolved:{ 
-        type: Number,
-        default: 0
+    mediumSolved: {
+      type: Number,
+      default: 0,
     },
-    hardSolved:{ 
-        type: Number,
-        default: 0
+    hardSolved: {
+      type: Number,
+      default: 0,
     },
     contestRating: {
-        type: Number
-    }
+      type: Number,
+    },
+    lastActiveDate: {
+      type: Date,
+    },
+    activityStatus: {
+      type: String, // emojiss
+    },
+  },
+  {
+    timestamps: true,
+  },
+);
 
-
-},{
-    timestamps: true
-});
-
-export default mongoose.model("LeetCode",leetcodeSchema);
+export default mongoose.model("LeetCode", leetcodeSchema);
