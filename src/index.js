@@ -65,7 +65,7 @@ import { contactRouter } from './routes/contact.js'
 import { friendRequestRouter } from './routes/friendRequest.js';
 import { messageRouter } from './routes/message.js'
 import  socialsRouter  from "./routes/socials.js";
-
+import { buildweekRouter } from './routes/buildweek.js'
 import { blogRouter } from "./routes/blog.js";
 // app.get('/',(req , res)=>{
 //     res.json({
@@ -85,7 +85,7 @@ app.use('/api/v1/contact',contactRouter)
 app.use('/api/v1/friend-request', friendRequestRouter)
 app.use('/api/v1/message', messageRouter)
 app.use("/api/v1/blog", blogRouter)
-
+app.use("/api/v1/buildweek",buildweekRouter);
 app.use("/api/v1/socials", socialsRouter);
 
 // QR router should be LAST since it catches all remaining routes
