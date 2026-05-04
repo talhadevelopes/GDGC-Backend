@@ -3,6 +3,13 @@ import Problem from '../models/Problem.js';
 import TestCase from '../models/TestCase.js';
 import { generateTestInputs } from '../helpers/testCaseGenerator.js';
 
+
+// this is not being used for now we will think about this later
+
+
+
+
+
 // Client is instantiated lazily so a missing GEMINI_API_KEY doesn't
 // crash the server on startup — the route returns a clean 500 instead.
 function getGeminiModel() {

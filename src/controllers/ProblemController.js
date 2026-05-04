@@ -78,67 +78,67 @@ export const ProblemController = {
       res.status(500).json({ success: false, message: error.message });
     }
   },
+  // this one is the actual ghee 
+  // run: async (req, res) => {
+  //   try {
+  //     const { code, language, customInput } = req.body;
+  //     console.log(`[Run] Problem ${req.params.id} — language: ${language}, customInput: ${JSON.stringify((customInput || '').slice(0, 200))}`);
+  //     if (!code || !language) {
+  //       console.log(`[Run] Missing code or language`);
+  //       return res.status(400).json({ success: false, message: 'code and language are required' });
+  //     }
 
-  run: async (req, res) => {
-    try {
-      const { code, language, customInput } = req.body;
-      console.log(`[Run] Problem ${req.params.id} — language: ${language}, customInput: ${JSON.stringify((customInput || '').slice(0, 200))}`);
-      if (!code || !language) {
-        console.log(`[Run] Missing code or language`);
-        return res.status(400).json({ success: false, message: 'code and language are required' });
-      }
+  //     const problem = await Problem.findById(req.params.id).select('_id title');
+  //     if (!problem) {
+  //       console.log(`[Run] Problem ${req.params.id} not found`);
+  //       return res.status(404).json({ success: false, message: 'Problem not found' });
+  //     }
 
-      const problem = await Problem.findById(req.params.id).select('_id title');
-      if (!problem) {
-        console.log(`[Run] Problem ${req.params.id} not found`);
-        return res.status(404).json({ success: false, message: 'Problem not found' });
-      }
+  //     const submissionId = crypto.randomUUID();
+  //     console.log(`[Run] "${problem.title}" — submissionId: ${submissionId}, language: ${language}`);
+  //     console.log(`[Run] Code (first 300 chars): ${code.slice(0, 300)}`);
 
-      const submissionId = crypto.randomUUID();
-      console.log(`[Run] "${problem.title}" — submissionId: ${submissionId}, language: ${language}`);
-      console.log(`[Run] Code (first 300 chars): ${code.slice(0, 300)}`);
+  //     await Submission.create({
+  //       submissionId,
+  //       user: req.id,
+  //       problem: problem._id,
+  //       language,
+  //       code,
+  //       verdict: 'pending',
+  //     });
+  //     console.log(`[Run] Submission created — enqueuing to judge queue`);
 
-      await Submission.create({
-        submissionId,
-        user: req.id,
-        problem: problem._id,
-        language,
-        code,
-        verdict: 'pending',
-      });
-      console.log(`[Run] Submission created — enqueuing to judge queue`);
+  //     await judgeQueue.add('judge', {
+  //       submissionId,
+  //       code,
+  //       language,
+  //       testCases: [{ input: customInput || '', expectedOutput: '' }],
+  //     });
+  //     console.log(`[Run] Job enqueued — polling for result (timeout ${POLL_TIMEOUT_MS}ms)`);
 
-      await judgeQueue.add('judge', {
-        submissionId,
-        code,
-        language,
-        testCases: [{ input: customInput || '', expectedOutput: '' }],
-      });
-      console.log(`[Run] Job enqueued — polling for result (timeout ${POLL_TIMEOUT_MS}ms)`);
+  //     const result = await pollForResult(submissionId);
 
-      const result = await pollForResult(submissionId);
+  //     if (!result) {
+  //       console.log(`[Run] ${submissionId} — judge timed out after ${POLL_TIMEOUT_MS}ms`);
+  //       return res.status(504).json({ success: false, message: 'Judge timed out. Try again.' });
+  //     }
 
-      if (!result) {
-        console.log(`[Run] ${submissionId} — judge timed out after ${POLL_TIMEOUT_MS}ms`);
-        return res.status(504).json({ success: false, message: 'Judge timed out. Try again.' });
-      }
+  //     const r = result.results[0];
+  //     const status = r.timedOut ? 'time_limit_exceeded' : r.exitCode !== 0 ? 'runtime_error' : 'success';
+  //     console.log(`[Run] ${submissionId} — status: ${status}, exitCode: ${r.exitCode}, timedOut: ${r.timedOut}`);
+  //     console.log(`[Run] ${submissionId} — stdout: ${JSON.stringify(r.stdout.slice(0, 500))}`);
+  //     if (r.stderr) console.log(`[Run] ${submissionId} — stderr: ${JSON.stringify(r.stderr.slice(0, 500))}`);
 
-      const r = result.results[0];
-      const status = r.timedOut ? 'time_limit_exceeded' : r.exitCode !== 0 ? 'runtime_error' : 'success';
-      console.log(`[Run] ${submissionId} — status: ${status}, exitCode: ${r.exitCode}, timedOut: ${r.timedOut}`);
-      console.log(`[Run] ${submissionId} — stdout: ${JSON.stringify(r.stdout.slice(0, 500))}`);
-      if (r.stderr) console.log(`[Run] ${submissionId} — stderr: ${JSON.stringify(r.stderr.slice(0, 500))}`);
-
-      res.json({
-        success: true,
-        status,
-        stdout: r.stdout,
-        stderr: r.stderr,
-        runtimeMs: null,
-      });
-    } catch (error) {
-      console.error(`[Run] Error:`, error.message);
-      res.status(500).json({ success: false, message: error.message });
-    }
-  },
+  //     res.json({
+  //       success: true,
+  //       status,
+  //       stdout: r.stdout,
+  //       stderr: r.stderr,
+  //       runtimeMs: null,
+  //     });
+  //   } catch (error) {
+  //     console.error(`[Run] Error:`, error.message);
+  //     res.status(500).json({ success: false, message: error.message });
+  //   }
+  // },
 };

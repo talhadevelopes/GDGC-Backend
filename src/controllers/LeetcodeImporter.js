@@ -86,14 +86,15 @@ function parseContent(html) {
   return { paragraphs, examples, constraints };
 }
 
+// this code imports code from leetcode 
 export const LeetcodeImporter = {
   import: async (req, res) => {
     try {
       const { url } = req.body;
       if (!url) return res.status(400).json({ success: false, message: 'url is required' });
 
-      const slug = extractSlug(url);
-      if (!slug) return res.status(400).json({ success: false, message: 'Could not parse LeetCode problem slug from input' });
+      const slug = extractSlug(url); // getting the slub from the URL 
+      if (!slug) return res.status(400).json({ success: false, message: 'Could not parse LeetCode problem slug from input' }); 
 
       console.log(`[LeetCode:import] Fetching slug: ${slug}`);
 
@@ -125,7 +126,7 @@ export const LeetcodeImporter = {
         tags,
         statement: { paragraphs, examples, constraints },
         allowedLanguages: ['javascript', 'python', 'cpp', 'java'],
-        defaultLanguage: 'javascript',
+        defaultLanguage: 'python',
       });
 
       console.log(`[LeetCode:import] Created problem: ${problem._id} — "${problem.title}"`);

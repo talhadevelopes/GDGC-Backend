@@ -87,13 +87,31 @@ export const SubmissionController = {
   list: async (req, res) => {
     try {
       const filter = {};
+      // Default to the authenticated user's own submissions; admins can override with ?userId=
+      filter.user = req.query.userId || req.id;
       if (req.query.problemId) filter.problem = req.query.problemId;
-      if (req.query.userId) filter.user = req.query.userId;
 
       const submissions = await Submission.find(filter)
         .sort({ createdAt: -1 })
-        .select('submissionId user problem language verdict createdAt');
-      res.json({ success: true, submissions });
+        .select('submissionId user problem language verdict allPassed results completedAt createdAt')
+        .lean();
+
+      // Attach a quick summary (passed/total) and elapsed time so the client
+      // doesn't have to compute it from the full results array
+      const enriched = submissions.map((s) => ({
+        submissionId: s.submissionId,
+        language: s.language,
+        verdict: s.verdict,
+        allPassed: s.allPassed,
+        passedCount: (s.results || []).filter((r) => r.passed).length,
+        totalCount: (s.results || []).length,
+        elapsedMs: s.completedAt && s.createdAt
+          ? new Date(s.completedAt) - new Date(s.createdAt)
+          : null,
+        createdAt: s.createdAt,
+      }));
+
+      res.json({ success: true, submissions: enriched });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
     }

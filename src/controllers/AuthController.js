@@ -329,10 +329,11 @@ export const AuthController = {
             }
             if(await bcrypt.compare(password, user.password)){
                 const token = jwt.sign({id:user._id}, process.env.JWT_SECRET);
-               
+
                 return res.json({
                     token:token,
                     guest:user.guest,
+                    name:user.name,
                 })
             }
             else{
