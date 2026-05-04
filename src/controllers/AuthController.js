@@ -329,10 +329,11 @@ export const AuthController = {
             }
             if(await bcrypt.compare(password, user.password)){
                 const token = jwt.sign({id:user._id}, process.env.JWT_SECRET);
-               
+
                 return res.json({
                     token:token,
                     guest:user.guest,
+                    name:user.name,
                 })
             }
             else{
@@ -461,6 +462,15 @@ export const AuthController = {
         return res.json({
             success:true
         })
+    },
+    Me: async (req, res) => {
+        try {
+            const user = await User.findById(req.id).select('-password');
+            if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+            res.json({ success: true, user });
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+    }
     },
     deleteAllguestUsers: async(req,res)=>{
         try {

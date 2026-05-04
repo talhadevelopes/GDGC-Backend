@@ -69,17 +69,13 @@ import { contactRouter } from './routes/contact.js'
 import { friendRequestRouter } from './routes/friendRequest.js';
 import { messageRouter } from './routes/message.js'
 import  socialsRouter  from "./routes/socials.js";
-// import { leaderboardrouter } from "./routes/leetcode.js"
 import leaderboardrouter from "./routes/leetcode.js";
-
-
+import { buildweekRouter } from './routes/buildweek.js'
 import { blogRouter } from "./routes/blog.js";
-// app.get('/',(req , res)=>{
-//     res.json({
-//         message : "Hello world"
-//     })
-// })
-
+import { problemRouter } from "./routes/problems.js";
+import { submissionRouter } from "./routes/submissions.js";
+import { exerciseRouter } from "./routes/exercises.js";
+import { leaderboardRouter, userStatsRouter } from "./routes/leaderboard.js";
 
 
 app.use('/api/v1/dye-application', dyeRoutes)
@@ -92,7 +88,14 @@ app.use('/api/v1/contact',contactRouter)
 app.use('/api/v1/friend-request', friendRequestRouter)
 app.use('/api/v1/message', messageRouter)
 app.use("/api/v1/blog", blogRouter)
+app.use("/api/v1/buildweek",buildweekRouter);
 
+app.use("/api/auth", authRouter)
+app.use("/api/problems", problemRouter)
+app.use("/api/submissions", submissionRouter)
+app.use("/api/exercises", exerciseRouter)
+app.use("/api/leaderboard", leaderboardRouter)
+app.use("/api/users", userStatsRouter)
 app.use("/api/v1/socials", socialsRouter);
 app.use("/api/v1/leaderboard", leaderboardrouter);
 
