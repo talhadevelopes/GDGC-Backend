@@ -70,6 +70,8 @@ import { friendRequestRouter } from './routes/friendRequest.js';
 import { messageRouter } from './routes/message.js'
 import  socialsRouter  from "./routes/socials.js";
 import leaderboardrouter from "./routes/leetcode.js";
+import {imageRouter} from "./routes/image.js";
+
 import { buildweekRouter } from './routes/buildweek.js'
 import { blogRouter } from "./routes/blog.js";
 import { problemRouter } from "./routes/problems.js";
@@ -88,6 +90,7 @@ app.use('/api/v1/contact',contactRouter)
 app.use('/api/v1/friend-request', friendRequestRouter)
 app.use('/api/v1/message', messageRouter)
 app.use("/api/v1/blog", blogRouter)
+app.use("/api/v1/images", imageRouter);
 app.use("/api/v1/buildweek",buildweekRouter);
 
 app.use("/api/auth", authRouter)
