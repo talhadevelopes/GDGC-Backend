@@ -5,6 +5,10 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 import dyeRoutes from "./routes/dyeRoutes.js";
 
+
+import "./cron/leetcodecron.js";
+
+
 // Load .env from root directory
 dotenv.config({ path: path.join(__dirname, '../.env') });
 import express from "express"
@@ -65,6 +69,7 @@ import { contactRouter } from './routes/contact.js'
 import { friendRequestRouter } from './routes/friendRequest.js';
 import { messageRouter } from './routes/message.js'
 import  socialsRouter  from "./routes/socials.js";
+import leaderboardrouter from "./routes/leetcode.js";
 import {imageRouter} from "./routes/image.js";
 
 import { buildweekRouter } from './routes/buildweek.js'
@@ -95,6 +100,8 @@ app.use("/api/exercises", exerciseRouter)
 app.use("/api/leaderboard", leaderboardRouter)
 app.use("/api/users", userStatsRouter)
 app.use("/api/v1/socials", socialsRouter);
+app.use("/api/v1/leaderboard", leaderboardrouter);
+
 
 // QR router should be LAST since it catches all remaining routes
 app.use("/",qrRouter)

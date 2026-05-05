@@ -7,6 +7,9 @@ const socialsSchema= new mongoose.Schema({
         required: true,
         unique: true
     },
+    // name: {  
+    //     type: String
+    // },
     linkedin:{
         type: String,
         default:""
