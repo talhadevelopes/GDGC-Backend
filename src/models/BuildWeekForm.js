@@ -23,12 +23,11 @@ const buildWeekFormSchema = new Schema(
     domain1: {
       type: String,
       required: true,
-      enum: ["Web Basic", "Web Intermediate", "AMIL", "CyberSecurity"],
+      enum: ["Web Basic", "Web Intermediate", "AIML", "CyberSecurity"],
     },
     domain2: {
       type: String,
       required: true,
-      enum: ["UI/UX", "Cloud", "GenAI", "DSA"],
     },
   },
   {
