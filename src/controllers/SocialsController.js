@@ -15,35 +15,30 @@ const verifyLeetcodeUrl = async (leetusername) => {
       `https://alfa-leetcode-api.onrender.com/${leetusername}`,
     );
     const data = await res.json();
-
     if (data.errors?.length) {
       return false;
     }
-
     return true;
-  } catch {
-    return false;
+  } 
+  catch(err) {
+    console.log(err.message);
+    return true;
   }
 };
 
 const processLeetcode = async (url) => {
   if (!url) return "";
-
   const extracted = extractLeetcodeUser(url);
-
   if (!extracted) {
     throw new Error("Invalid LeetCode URL");
   }
-
   const isValid = await verifyLeetcodeUrl(extracted);
-
   if (!isValid) {
     throw new Error("LeetCode user does not exist");
   }
-
-  console.log("URL:", url);
-  console.log("Extracted:", extracted);
-  console.log("Valid:", isValid);
+  // console.log("URL:", url);
+  // console.log("Extracted:", extracted);
+  // console.log("Valid:", isValid);
 
   return extracted;
 };
@@ -62,10 +57,16 @@ export const updateSocials = async (req, res) => {
         socials.instagram = req.body.instagram;
       if (req.body.twitter !== undefined) socials.twitter = req.body.twitter;
 
+      let username = null;
       if (req.body.leetcode) {
         //!== undefined)
+        
         try {
-          socials.leetcode = await processLeetcode(req.body.leetcode);
+          // socials.leetcode = await processLeetcode(req.body.leetcode);
+           username = await processLeetcode(req.body.leetcode);
+          // store FULL URL in socials
+          socials.leetcode = req.body.leetcode;
+
         } catch (err) {
           return res.status(400).json({
             success: false,
@@ -75,13 +76,13 @@ export const updateSocials = async (req, res) => {
       }
       await socials.save();
       //logic for saving leetcode username in leetcode docc and also storing data for the first timei in the leaderboard bf cron
-      if (socials.leetcode) {
+      if (username) {
         try {
-          const username = socials.leetcode;
+          // const username = socials.leetcode;
           const res = await fetch(
             `https://alfa-leetcode-api.onrender.com/${username}/profile`,
           );
-          if (!response.ok) throw new Error("LeetCode API failed");
+          if (!res.ok) throw new Error("LeetCode API failed");
           const data = await res.json();
           if (data && data.status !== "error") {
             let contestRating = 0;
@@ -147,9 +148,52 @@ export const updateSocials = async (req, res) => {
       github: req.body.github || "",
       instagram: req.body.instagram || "",
       twitter: req.body.twitter || "",
-      leetcode: leetcodeusername,
+      leetcode: req.body.leetcode || "",
     });
     await socials.save();
+    //FOR WHILE CREATINGGGGGG ADDING DATA TO THE LEETCODE DOC (stupid) insatnt leaderboard entry for immediate creation not after cron jobb
+
+    if (leetcodeusername) {
+  try {
+    const res = await fetch(
+      `https://alfa-leetcode-api.onrender.com/${leetcodeusername}/profile`
+    );
+
+    if (!res.ok) throw new Error("LeetCode API failed");
+
+    const data = await res.json();
+
+    let contestRating = 0;
+
+    try {
+      const contestres = await fetch(
+        `https://alfa-leetcode-api.onrender.com/${leetcodeusername}/contest`
+      );
+      const contestData = await contestres.json();
+
+      if (contestData?.contestParticipation?.length > 0) {
+        const latestContest = contestData.contestParticipation.at(-1);
+        contestRating = latestContest.rating || 0;
+      }
+    } catch {}
+
+    await LeetCode.findOneAndUpdate(
+      { user: userId },
+      {
+        user: userId,
+        username: leetcodeusername,
+        totalSolved: data.totalSolved,
+        easySolved: data.easySolved,
+        mediumSolved: data.mediumSolved,
+        hardSolved: data.hardSolved,
+        contestRating,
+      },
+      { upsert: true }
+    );
+  } catch (e) {
+    console.log("Immediate fetch failed", e.message);
+  }
+}
 
     res.json({
       success: true,
