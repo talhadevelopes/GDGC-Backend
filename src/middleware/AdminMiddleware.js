@@ -4,7 +4,7 @@ const AdminMiddleware = async (req, res, next) => {
         
         const user = await User.findById(req.id)
         // console.log(user)
-        if (!user.admin || !user.superadmin) {
+        if (!user.admin && !user.superadmin) {
             return res.status(401).json({ message: 'Unauthorized' });
         }
         
