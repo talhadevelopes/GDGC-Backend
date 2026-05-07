@@ -78,6 +78,7 @@ import { problemRouter } from "./routes/problems.js";
 import { submissionRouter } from "./routes/submissions.js";
 import { exerciseRouter } from "./routes/exercises.js";
 import { leaderboardRouter, userStatsRouter } from "./routes/leaderboard.js";
+import { teamRouter } from "./routes/team.js";
 
 
 app.use('/api/v1/dye-application', dyeRoutes)
@@ -101,6 +102,7 @@ app.use("/api/leaderboard", leaderboardRouter)
 app.use("/api/users", userStatsRouter)
 app.use("/api/v1/socials", socialsRouter);
 app.use("/api/v1/leaderboard", leaderboardrouter);
+app.use("/api/v1/team", teamRouter);
 
 
 // QR router should be LAST since it catches all remaining routes
