@@ -12,7 +12,7 @@ const teamMemberSchema = new mongoose.Schema({
   domain: {
     type: String,
     required: true,
-    enum: ["WEB", "UI/UX", "AI/ML", "CYBERSEC", "CLOUD", "HR", "MEDIA", "DESIGN", "DOC", "EVENTS", "OPERATIONS", "MARKETING", "DSA"],
+    enum: ["WEB", "UI/UX", "AI/ML", "CYBERSEC", "CLOUD", "HR", "MEDIA", "DESIGN", "DOC", "EVENTS", "OPERATIONS", "MARKETING", "DSA", "PR"],
   },
   role: {
     type: String,
